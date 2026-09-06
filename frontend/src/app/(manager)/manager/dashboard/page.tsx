@@ -87,7 +87,7 @@ export default function ManagerDashboardPage() {
   } = data || {};
 
   if (loading) return <LoadingState message="Loading dashboard..." />;
-  if (error) return <ErrorState message={error} onRetry={fetchDashboard} />;
+  if (error && !data) return <ErrorState message={error} onRetry={fetchDashboard} />;
 
   return (
     <div className="space-y-8">
@@ -96,6 +96,7 @@ export default function ManagerDashboardPage() {
         description="Team overview and analytics"
       />
 
+      {error && <ErrorState message={error} onRetry={fetchDashboard} />}
       <div className="max-w-sm space-y-2">
         <p id="dashboard-week-label" className="text-sm font-medium">
           Reporting week (Monday–Sunday, UTC)

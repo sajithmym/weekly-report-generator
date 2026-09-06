@@ -29,7 +29,7 @@ export default function ReportHistoryPage() {
   const { data, loading, error, reload: fetchHistory } = useResource(loader);
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchHistory} />;
+  if (error && !data) return <ErrorState message={error} onRetry={fetchHistory} />;
 
   const reports = data?.data || [];
 
@@ -40,6 +40,7 @@ export default function ReportHistoryPage() {
         description="View all your past reports"
       />
 
+      {error && <ErrorState message={error} onRetry={fetchHistory} />}
       {reports.length === 0 ? (
         <EmptyState
           title="No reports yet"

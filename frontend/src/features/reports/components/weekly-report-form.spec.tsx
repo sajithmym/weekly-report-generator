@@ -2,6 +2,7 @@ import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { WeeklyReportForm } from "./weekly-report-form";
+import type { Report } from "@/types";
 
 vi.mock("@/components/shared/entity-picker", () => ({
   EntityPicker: ({
@@ -158,5 +159,45 @@ describe("WeeklyReportForm", () => {
 
     expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+  });
+
+  it("marks custom picker changes as unsaved", async () => {
+    const user = userEvent.setup();
+    const onDirtyChange = vi.fn();
+    renderForm({ onDirtyChange });
+    expect(onDirtyChange).toHaveBeenLastCalledWith(false);
+    await user.click(screen.getByRole("button", { name: "Project" }));
+    expect(onDirtyChange).toHaveBeenLastCalledWith(true);
+  });
+
+  it("applies refreshed report data only while the editor has no unsaved changes", async () => {
+    const user = userEvent.setup();
+    const report: Report = {
+      id: "report-1",
+      userId: "member-1",
+      projectId: null,
+      weekStart: "2026-08-31",
+      weekEnd: "2026-09-06",
+      status: "DRAFT",
+      notes: "Original notes",
+      latestVersionNumber: 0,
+      submittedAt: null,
+      approvedAt: null,
+      createdAt: "2026-08-31T00:00:00Z",
+      updatedAt: "2026-08-31T00:00:00Z",
+    };
+    const props = {
+      submitLabel: "Save changes",
+      saving: false,
+      onSave: vi.fn(),
+      onCancel: vi.fn(),
+    };
+    const { rerender } = render(<WeeklyReportForm {...props} initialReport={report} />);
+    rerender(<WeeklyReportForm {...props} initialReport={{ ...report, notes: "Refreshed notes" }} />);
+    expect(screen.getByLabelText("Notes and links")).toHaveValue("Refreshed notes");
+
+    await user.type(screen.getByLabelText("Notes and links"), " with local edits");
+    rerender(<WeeklyReportForm {...props} initialReport={{ ...report, notes: "Later server notes" }} />);
+    expect(screen.getByLabelText("Notes and links")).toHaveValue("Refreshed notes with local edits");
   });
 });

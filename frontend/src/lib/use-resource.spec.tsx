@@ -1,4 +1,4 @@
-import { renderHook, waitFor } from "@testing-library/react";
+import { act, renderHook, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
 import { useResource } from "./use-resource";
 
@@ -23,7 +23,7 @@ describe("useResource", () => {
     await waitFor(() => expect(result.current.data).toBe("first response"));
     expect(result.current.loading).toBe(false);
 
-    result.current.reload();
+    act(() => result.current.reload());
     await waitFor(() => expect(result.current.data).toBe("second response"));
     expect(loader).toHaveBeenCalledTimes(2);
   });
@@ -67,5 +67,28 @@ describe("useResource", () => {
 
     await waitFor(() => expect(result.current.data).toBe("current data"));
     expect(result.current.error).toBeUndefined();
+  });
+
+  it("does not show the previous resource while a different loader is pending", async () => {
+    const firstLoader = vi.fn().mockResolvedValue("First report");
+    const second = deferred<string>();
+    const secondLoader = vi.fn(() => second.promise);
+    const { result, rerender } = renderHook(
+      ({ loader }) => useResource(loader),
+      { initialProps: { loader: firstLoader } },
+    );
+    await waitFor(() => expect(result.current.data).toBe("First report"));
+    rerender({ loader: secondLoader });
+    expect(result.current.data).toBeUndefined();
+    expect(result.current.loading).toBe(true);
+    await act(async () => second.resolve("Second report"));
+    expect(result.current.data).toBe("Second report");
+  });
+
+  it("handles synchronous loader failures", async () => {
+    const loader = vi.fn(() => { throw new Error("Invalid request"); });
+    const { result } = renderHook(() => useResource(loader));
+    await waitFor(() => expect(result.current.error).toBe("Invalid request"));
+    expect(result.current.loading).toBe(false);
   });
 });

@@ -62,7 +62,7 @@ export default function ReportDetailPage() {
   };
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchReport} />;
+  if (error && !report) return <ErrorState message={error} onRetry={fetchReport} />;
   if (!report) return <ErrorState message="Report not found" />;
 
   const isEditable =
@@ -72,10 +72,11 @@ export default function ReportDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        refreshDisabled={submitting || showSubmitConfirmation}
         title={`Report: ${formatDate(report.weekStart)} — ${formatDate(report.weekEnd)}`}
         description={`Version ${report.latestVersionNumber}`}
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <StatusBadge status={report.status} />
             {isEditable && (
               <>
@@ -114,6 +115,7 @@ export default function ReportDetailPage() {
         </Card>
       )}
 
+      {error && <ErrorState message={error} onRetry={fetchReport} />}
       <ReportContent content={report} />
       <ReportHistory report={report} />
 

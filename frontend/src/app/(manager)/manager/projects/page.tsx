@@ -173,6 +173,7 @@ export default function ManagerProjectsPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        refreshDisabled={saving || updatingStatus || formOpen || Boolean(statusProject)}
         title="Project Management"
         description="Create, update, archive, and restore projects without losing report history."
         action={

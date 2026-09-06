@@ -25,5 +25,19 @@ export default function NewReportPage() {
     } finally { setSaving(false); }
   };
 
-  return <div className="space-y-6"><PageHeader title="Create weekly report" description="Save a complete draft, then submit it for manager review." /><WeeklyReportForm submitLabel="Save draft" saving={saving} onSave={createReport} onCancel={() => router.back()} /></div>;
+  return (
+    <div className="space-y-6">
+      <PageHeader
+        title="Create weekly report"
+        description="Save a complete draft, then submit it for manager review."
+        refreshDisabled={saving}
+      />
+      <WeeklyReportForm
+        submitLabel="Save draft"
+        saving={saving}
+        onSave={createReport}
+        onCancel={() => router.back()}
+      />
+    </div>
+  );
 }

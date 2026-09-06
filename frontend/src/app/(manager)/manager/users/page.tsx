@@ -63,7 +63,11 @@ const EMPTY_USER: CreateUserPayload = {
 
 export default function ManagerUsersPage() {
   const { toast } = useToast();
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const {
+    data: currentUser,
+    error: currentUserError,
+    reload: fetchCurrentUser,
+  } = useResource(authApi.getMe);
   const [filters, setFilters] = useState<UserFilters>(DEFAULT_FILTERS);
   const [appliedFilters, setAppliedFilters] =
     useState<UserFilters>(DEFAULT_FILTERS);
@@ -99,13 +103,6 @@ export default function ManagerUsersPage() {
     [page, appliedFilters],
   );
   const { data, loading, error, reload: fetchUsers } = useResource(loader);
-
-  useEffect(() => {
-    authApi
-      .getMe()
-      .then(setCurrentUser)
-      .catch(() => undefined);
-  }, []);
 
   const createUser = async () => {
     const name = newUser.name.trim();
@@ -201,6 +198,7 @@ export default function ManagerUsersPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        refreshDisabled={saving || updating || createOpen || Boolean(statusUser || roleDialogUser || roleChange)}
         title={isAdmin ? "User Management" : "Team Members"}
         description={
           isAdmin
@@ -222,6 +220,7 @@ export default function ManagerUsersPage() {
           ) : undefined
         }
       />
+      {currentUserError && <ErrorState message={currentUserError} onRetry={fetchCurrentUser} />}
       <Card>
         <CardContent className="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_180px_180px_auto_auto] lg:items-end">
           <div className="space-y-2">

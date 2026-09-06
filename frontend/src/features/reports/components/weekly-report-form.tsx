@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   useFieldArray,
   useForm,
@@ -45,6 +45,7 @@ type WeeklyReportFormProps = {
   saving: boolean;
   onSave: (data: ReportFormData) => Promise<void>;
   onCancel: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 };
 
 const defaultValues: ReportFormData = {
@@ -64,6 +65,7 @@ export function WeeklyReportForm({
   saving,
   onSave,
   onCancel,
+  onDirtyChange,
 }: WeeklyReportFormProps) {
   const form = useForm<ReportFormData>({
     resolver: zodResolver(reportFormSchema),
@@ -75,9 +77,20 @@ export function WeeklyReportForm({
     register,
     control,
     handleSubmit,
-    setValue,
-    formState: { errors },
+    reset,
+    formState: { errors, isDirty },
   } = form;
+  // Custom controls must participate in dirty tracking just like registered inputs.
+  const setValue: typeof form.setValue = (name, value, options) =>
+    form.setValue(name, value, { ...options, shouldDirty: true });
+
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
+
+  useEffect(() => {
+    if (initialReport && !isDirty) reset(reportToFormData(initialReport));
+  }, [initialReport, isDirty, reset]);
   const values = useWatch({ control });
   const taskFields = useFieldArray({ control, name: "tasks" });
   const nextWeekFields = useFieldArray({ control, name: "nextWeekTasks" });

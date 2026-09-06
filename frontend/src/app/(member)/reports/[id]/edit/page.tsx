@@ -19,6 +19,7 @@ export default function EditReportPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [dirty, setDirty] = useState(false);
   const loader = useCallback(() => reportsApi.getById(id), [id]);
   const {
     data: report,
@@ -47,7 +48,7 @@ export default function EditReportPage() {
     }
   };
   if (loading) return <LoadingState message="Loading report editor..." />;
-  if (error) return <ErrorState message={error} onRetry={fetchReport} />;
+  if (error && !report) return <ErrorState message={error} onRetry={fetchReport} />;
   if (!report) return <ErrorState message="Report not found" />;
   if (
     report.status !== REPORT_STATUSES.DRAFT &&
@@ -59,16 +60,20 @@ export default function EditReportPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        refreshDisabled={saving || dirty}
+        refreshDisabledReason={dirty ? "Save or cancel your changes before refreshing." : "Saving report..."}
         title="Edit weekly report"
         description="Update the draft before submitting it for review."
       />
       <WeeklyReportForm
+        onDirtyChange={setDirty}
         initialReport={report}
         submitLabel="Save changes"
         saving={saving}
         onSave={save}
         onCancel={() => router.push(`/reports/${id}`)}
       />
+      {error && <ErrorState message={error} onRetry={dirty || saving ? undefined : fetchReport} />}
     </div>
   );
 }

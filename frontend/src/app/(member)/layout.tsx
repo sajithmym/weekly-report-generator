@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { PageRefreshProvider } from "@/lib/page-refresh";
 import { Button } from "@/components/ui/button";
 import {
   FileText,
@@ -144,7 +145,9 @@ export default function MemberLayout({
       {/* Main content */}
       <main className="flex-1 overflow-auto w-full">
         <div className="pt-14 md:pt-0">
-          <div className="p-4 sm:p-6 lg:p-8">{children}</div>
+          <div className="p-4 sm:p-6 lg:p-8">
+            <PageRefreshProvider key={pathname}>{children}</PageRefreshProvider>
+          </div>
         </div>
       </main>
       <ConfirmationDialog

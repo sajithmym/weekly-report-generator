@@ -159,6 +159,11 @@ export function EntityPicker({
           </div>
         )}
       </PopoverContent>
+      {error && !open && (
+        <p role="alert" className="mt-2 text-sm text-destructive">
+          Could not load {kind === "project" ? "projects" : "members"}: {error}
+        </p>
+      )}
     </Popover>
   );
 }

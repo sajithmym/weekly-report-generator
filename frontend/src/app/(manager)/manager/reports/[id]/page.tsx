@@ -98,7 +98,7 @@ export default function ManagerReportDetailPage() {
   };
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchReport} />;
+  if (error && !report) return <ErrorState message={error} onRetry={fetchReport} />;
   if (!report) return <ErrorState message="Report not found" />;
 
   const isReviewable = report.status === REPORT_STATUSES.SUBMITTED;
@@ -106,11 +106,13 @@ export default function ManagerReportDetailPage() {
   return (
     <div className="space-y-6">
       <PageHeader
+        refreshDisabled={actionLoading || changesDialogOpen || approveConfirmationOpen}
         title={`${report.user?.name || "Unknown"} — ${formatDate(report.weekStart)} — ${formatDate(report.weekEnd)}`}
         description={`Version ${report.latestVersionNumber} • ${report.project?.name || "No project"}`}
         action={<StatusBadge status={report.status} />}
       />
 
+      {error && <ErrorState message={error} onRetry={fetchReport} />}
       <ReportContent content={report} />
       <ReportHistory report={report} />
 

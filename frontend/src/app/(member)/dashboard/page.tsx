@@ -36,7 +36,7 @@ export default function MemberDashboardPage() {
   const { data, summary = {} } = result || {};
 
   if (loading) return <LoadingState />;
-  if (error) return <ErrorState message={error} onRetry={fetchReports} />;
+  if (error && !result) return <ErrorState message={error} onRetry={fetchReports} />;
 
   const recentReports = data?.data || [];
 
@@ -53,6 +53,7 @@ export default function MemberDashboardPage() {
       />
 
       {/* Quick Stats */}
+      {error && <ErrorState message={error} onRetry={fetchReports} />}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
         <Card>
           <CardHeader className="pb-2">
