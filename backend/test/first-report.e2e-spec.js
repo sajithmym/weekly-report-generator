@@ -13,6 +13,8 @@ describe("New accounts and first reports through real HTTP and PostgreSQL", () =
     memberHeaders,
     memberCookie,
     invitedHeaders,
+    invitedMemberId,
+    invitedReportId,
     draftId;
   const users = [];
   const suffix = randomUUID();
@@ -277,6 +279,7 @@ describe("New accounts and first reports through real HTTP and PostgreSQL", () =
       })
       .expect(201);
     users.push(invitation.body.data.id);
+    invitedMemberId = invitation.body.data.id;
     expect(invitation.body.data).toMatchObject({
       role: "TEAM_MEMBER",
       isActive: true,
@@ -301,6 +304,7 @@ describe("New accounts and first reports through real HTTP and PostgreSQL", () =
       .post(`/api/v1/reports/${first.body.data.id}/submit`)
       .set(invitedHeaders)
       .expect(200);
+    invitedReportId = submission.body.data.id;
     expect(submission.body.data).toMatchObject({
       status: "SUBMITTED",
       latestVersionNumber: 1,
@@ -318,6 +322,66 @@ describe("New accounts and first reports through real HTTP and PostgreSQL", () =
       .post(`/api/v1/reports/${draftId}/submit`)
       .set(invitedHeaders)
       .expect(403);
+  });
+
+  it("shows the same submitted week as SUBMITTED and the next week as NOT_STARTED on manager and admin dashboards", async () => {
+    // Regression for "member sees SUBMITTED but manager sees NOT_STARTED":
+    // that report belongs to the previous reporting week. The roster must show
+    // SUBMITTED for the submitted week and NOT_STARTED for every other week,
+    // for both privileged roles, using the exact week the member submitted.
+    const nextWeek = { weekStart: "2026-09-07", weekEnd: "2026-09-13" };
+    for (const authHeaders of [roles.MANAGER, roles.ADMIN]) {
+      const submittedWeek = await request(http)
+        .get("/api/v1/manager/dashboard/roster")
+        .set(authHeaders)
+        .query({ ...week, userId: invitedMemberId })
+        .expect(200);
+      expect(submittedWeek.body.data).toEqual([
+        expect.objectContaining({
+          userId: invitedMemberId,
+          weekStart: new Date(week.weekStart).toISOString(),
+          status: "SUBMITTED",
+          reportId: invitedReportId,
+          submitted: true,
+        }),
+      ]);
+
+      const followingWeek = await request(http)
+        .get("/api/v1/manager/dashboard/roster")
+        .set(authHeaders)
+        .query({ ...nextWeek, userId: invitedMemberId })
+        .expect(200);
+      expect(followingWeek.body.data).toEqual([
+        expect.objectContaining({
+          userId: invitedMemberId,
+          status: "NOT_STARTED",
+          reportId: null,
+          submitted: false,
+        }),
+      ]);
+    }
+
+    // Summary numbers are global to the database (other suites share the
+    // schema), so assert the invariants this test's data controls.
+    const summary = await request(http)
+      .get("/api/v1/manager/dashboard/summary")
+      .set(roles.MANAGER)
+      .query(week)
+      .expect(200);
+    expect(summary.body.data.submittedCount).toBeGreaterThanOrEqual(1);
+    expect(summary.body.data.draftCount).toBeGreaterThanOrEqual(1);
+    expect(summary.body.data.complianceRate).toBeGreaterThan(0);
+    // The following week has no submissions at all: every active member is
+    // still pending there, including both members this suite created.
+    const nextWeekSummary = await request(http)
+      .get("/api/v1/manager/dashboard/summary")
+      .set(roles.MANAGER)
+      .query(nextWeek)
+      .expect(200);
+    expect(nextWeekSummary.body.data).toMatchObject({
+      submittedCount: 0,
+    });
+    expect(nextWeekSummary.body.data.notStartedCount).toBeGreaterThanOrEqual(2);
   });
 
   it("allows only one draft when two creation requests race for the same member/week", async () => {

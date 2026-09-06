@@ -1,15 +1,26 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { Prisma } from "@prisma/client";
 import { PrismaService } from "../database/prisma.service";
 import { DAY_MS, selectedWeeks, weekOf } from "../reports/report-date";
 import { PaginatedResponse } from "../common/dto";
 import { ReportStatus, UserRole } from "../common/enums";
 import { RosterFilterDto } from "./dto/dashboard-filter.dto";
-import { DASHBOARD_SETTINGS, REPORT_SETTINGS } from "../settings";
+import {
+  DASHBOARD_SETTINGS,
+  REPORT_SETTINGS,
+  SERVER_SETTINGS,
+} from "../settings";
 
 @Injectable()
 export class DashboardService {
+  private readonly logger = new Logger(DashboardService.name);
+
   constructor(private prisma: PrismaService) {}
+
+  /** Development-only tracing for roster week/status mismatches. Never logs report content. */
+  private debugLog(message: string) {
+    if (SERVER_SETTINGS.nodeEnv !== "production") this.logger.debug(message);
+  }
 
   private dateFilter(start?: string, end?: string): Prisma.ReportWhereInput {
     const range = selectedWeeks(start, end);
@@ -55,6 +66,18 @@ export class DashboardService {
         report,
       ]),
     );
+    this.debugLog(
+      `roster weeks=${range.first.toISOString()}..${range.last.toISOString()} ` +
+        `members=${members.map((member) => member.id).join(",") || "none"} ` +
+        `reports=${
+          reports
+            .map(
+              (report) =>
+                `${report.userId}:${weekOf(report.weekStart).toISOString()}:${report.status}`,
+            )
+            .join(",") || "none"
+        }`,
+    );
     return members.flatMap((member) =>
       range.weeks.map((week) => {
         const report = lookup.get(`${member.id}:${week.toISOString()}`);
@@ -68,7 +91,7 @@ export class DashboardService {
         const late = submitted
           ? Boolean(submittedAt && submittedAt >= deadline)
           : new Date() >= deadline;
-        return {
+        const row = {
           userId: member.id,
           name: member.name,
           weekStart: week.toISOString(),
@@ -83,6 +106,10 @@ export class DashboardService {
           submitted,
           late,
         };
+        this.debugLog(
+          `roster row member=${member.id} week=${week.toISOString()} status=${row.status}`,
+        );
+        return row;
       }),
     );
   }

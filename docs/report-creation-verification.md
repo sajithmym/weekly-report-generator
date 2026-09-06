@@ -2,6 +2,19 @@
 
 Verified locally on 6 September 2026.
 
+## Submitted-week vs selected-week investigation (6 September 2026)
+
+Reported symptom: a member sees SUBMITTED in their dashboard for the Aug 24–30, 2026 report, while the manager dashboard and submission tracking (defaulting to Aug 31–Sep 6, 2026) list the same member as NOT_STARTED.
+
+Conclusion: expected behavior, not a data bug. The roster is keyed strictly by member and Monday–Sunday UTC week, so a report can only appear in the week it belongs to. The manager view defaulted to the current week, one week after the submitted report's week. Traced end to end: form week defaults (`reportWeek`), Zod Monday–Sunday validation, backend `validateReportWeek`, stored `weekStart`, roster `selectedWeeks`/`weekOf` normalization, and exact `userId:weekStart` lookup. No timezone drift exists; all boundaries are UTC-anchored.
+
+Changes made so this cannot be misread again:
+
+- Manager dashboard and team reports pages show an explicit "Viewing reporting week" stepper (± one week) above the data, with a note that reports submitted for other weeks appear only when that week is selected.
+- The report form states whether the chosen week is the current, past, or future reporting week, and that managers see other weeks only when selected.
+- Development-only tracing (no-ops in production): backend roster weeks/members/statuses and submit week logging via NestJS `Logger.debug`; frontend logs of the requested dashboard/team-reports week and the week being saved from the form.
+- Regression coverage: a dashboard unit test pins SUBMITTED to the report's own week and NOT_STARTED for the following week; an E2E test verifies an invited member's submission is visible as SUBMITTED to both MANAGER and ADMIN for that exact week while the next week stays NOT_STARTED with `reportId: null`; frontend tests cover the stepper boundaries and the form week hints.
+
 ## Fixes
 
 - Matched frontend date validation to the API: actual calendar dates, date-only values, and Monday–Sunday weeks, including year and leap-year boundaries.

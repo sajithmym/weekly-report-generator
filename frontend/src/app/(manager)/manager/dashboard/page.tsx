@@ -5,6 +5,7 @@ import { reportWeek } from "@/lib/report-week";
 import { useResource } from "@/lib/use-resource";
 import { DatePicker } from "@/components/ui/date-picker";
 import { SubmissionRoster } from "@/features/reports/components/submission-roster";
+import { WeekStepper } from "@/features/reports/components/week-stepper";
 import { managerApi } from "@/services/manager.api";
 import { PageHeader } from "@/components/shared/page-header";
 import { MetricCard } from "@/components/shared/metric-card";
@@ -47,6 +48,13 @@ const COLORS = CHART_SETTINGS.palette;
 
 export default function ManagerDashboardPage() {
   const [week, setWeek] = useState(() => reportWeek());
+  // Development-only trace: shows which week this dashboard requests, so
+  // submitted-week vs selected-week questions can be answered from the console.
+  if (process.env.NODE_ENV !== "production") {
+    console.info(
+      `[dashboard] requested reporting week ${week.weekStart}..${week.weekEnd}`,
+    );
+  }
   const loader = useCallback(async () => {
     const [
       summary,
@@ -109,6 +117,11 @@ export default function ManagerDashboardPage() {
           {formatDate(week.weekStart)} – {formatDate(week.weekEnd)}
         </p>
       </div>
+      <WeekStepper
+        weekStart={week.weekStart}
+        weekEnd={week.weekEnd}
+        onChange={(weekStart) => setWeek(reportWeek(weekStart))}
+      />
       {/* KPI Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-3 sm:gap-4">
         <MetricCard

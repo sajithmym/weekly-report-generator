@@ -68,6 +68,66 @@ describe("DashboardService", () => {
     );
   });
 
+  it("shows SUBMITTED only in the report's own week and NOT_STARTED for other weeks", async () => {
+    // Regression guard for "member submitted but manager sees NOT_STARTED":
+    // the roster must key reports strictly by member and Monday week, so a
+    // submitted Aug 24-30 report never leaks into the Aug 31-Sep 6 roster.
+    const { service, prisma } = createService();
+    const previousWeek = new Date("2026-08-24T00:00:00.000Z");
+    prisma.user.findMany.mockResolvedValue([{ id: "member-a", name: "Asha" }]);
+    prisma.report.findMany.mockResolvedValue([
+      {
+        id: "submitted-prev-week",
+        userId: "member-a",
+        weekStart: previousWeek,
+        status: "SUBMITTED",
+        submittedAt: new Date("2026-08-28T10:00:00.000Z"),
+        versions: [{ submittedAt: new Date("2026-08-28T10:00:00.000Z") }],
+      },
+    ]);
+
+    const result = await service.getRoster({
+      page: 1,
+      limit: 20,
+      weekStart: "2026-08-31",
+      weekEnd: "2026-09-06",
+    });
+
+    expect(result.data).toEqual([
+      expect.objectContaining({
+        userId: "member-a",
+        weekStart: weekStart.toISOString(),
+        status: "NOT_STARTED",
+        reportId: null,
+        submitted: false,
+      }),
+    ]);
+    // Reports outside the requested week must not be requested at all.
+    expect(prisma.report.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          userId: { in: ["member-a"] },
+          weekStart: { gte: weekStart, lt: new Date("2026-09-07T00:00:00.000Z") },
+        }),
+      }),
+    );
+
+    const previousWeekRoster = await service.getRoster({
+      page: 1,
+      limit: 20,
+      weekStart: "2026-08-24",
+      weekEnd: "2026-08-30",
+    });
+    expect(previousWeekRoster.data).toEqual([
+      expect.objectContaining({
+        userId: "member-a",
+        weekStart: previousWeek.toISOString(),
+        status: "SUBMITTED",
+        submitted: true,
+      }),
+    ]);
+  });
+
   it("filters roster entries by pending, late, and stored report states", async () => {
     jest.useFakeTimers().setSystemTime(new Date("2026-09-10T00:00:00.000Z"));
     try {

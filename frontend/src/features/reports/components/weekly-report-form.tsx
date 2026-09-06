@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, type FormEvent } from "react";
 import {
   useFieldArray,
   useForm,
@@ -95,6 +95,21 @@ export function WeeklyReportForm({
     if (initialReport && !isDirty) reset(reportToFormData(initialReport));
   }, [initialReport, isDirty, reset]);
   const values = useWatch({ control });
+  const weekContext = useMemo(() => {
+    const todayWeek = reportWeek();
+    const start = values.weekStart ? new Date(`${values.weekStart}T00:00:00Z`) : null;
+    if (!start || Number.isNaN(start.getTime())) return null;
+    const days = Math.round(
+      (start.getTime() - new Date(`${todayWeek.weekStart}T00:00:00Z`).getTime()) /
+        (REPORT_SETTINGS.calendar.millisecondsPerDay * 7),
+    );
+    if (days === 0)
+      return "This is the current reporting week (Monday–Sunday, UTC).";
+    if (days > 0)
+      return `This is a future reporting week (${days} week${days === 1 ? "" : "s"} ahead). Managers will see it only when that week is selected.`;
+    const weeks = Math.abs(days);
+    return `This is a past reporting week (${weeks} week${weeks === 1 ? "" : "s"} ago). Managers will see it only when that week is selected.`;
+  }, [values.weekStart]);
   const taskFields = useFieldArray({ control, name: "tasks" });
   const nextWeekFields = useFieldArray({ control, name: "nextWeekTasks" });
   const blockerFields = useFieldArray({ control, name: "blockers" });
@@ -107,16 +122,23 @@ export function WeeklyReportForm({
     if (saving || saveInProgress.current) return;
     saveInProgress.current = true;
     try {
-      await handleSubmit((data) =>
-        onSave({
+      await handleSubmit((data) => {
+        // Development-only trace of the reporting week being saved, so
+        // "wrong week" submissions can be confirmed from the console.
+        if (process.env.NODE_ENV !== "production") {
+          console.info(
+            `[report-form] saving week ${data.weekStart}..${data.weekEnd}`,
+          );
+        }
+        return onSave({
           ...data,
           projectId: data.projectId || null,
           nextWeekTasks: data.nextWeekTasks.map((task, sortOrder) => ({
             ...task,
             sortOrder,
           })),
-        }),
-      )(event);
+        });
+      })(event);
     } catch (error) {
       setError("root.server", {
         message: getErrorMessage(
@@ -139,7 +161,13 @@ export function WeeklyReportForm({
           <CardHeader>
             <CardTitle>Week information</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 md:grid-cols-3">
+          <CardContent className="space-y-3">
+            {weekContext && (
+              <p className="rounded-md bg-muted px-3 py-2 text-sm text-muted-foreground">
+                {weekContext}
+              </p>
+            )}
+            <div className="grid gap-4 md:grid-cols-3">
             <Field
               label="Project"
               controlId="report-project"
@@ -187,6 +215,7 @@ export function WeeklyReportForm({
                 readOnly
               />
             </Field>
+            </div>
           </CardContent>
         </Card>
 

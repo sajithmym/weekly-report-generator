@@ -79,6 +79,35 @@ describe("WeeklyReportForm", () => {
     expect(onCancel).toHaveBeenCalledTimes(1);
   });
 
+  it("labels the default week as the current reporting week", () => {
+    // A fresh form always opens on the current Monday-Sunday week, so the
+    // hint must describe it as current regardless of when tests run.
+    renderForm();
+    expect(
+      screen.getByText(/This is the current reporting week/i),
+    ).toBeInTheDocument();
+  });
+
+  it("flags a past reporting week as visible only when that week is selected", () => {
+    const report: Report = {
+      id: "old-report",
+      userId: "member-1",
+      projectId: null,
+      weekStart: "2020-01-06",
+      weekEnd: "2020-01-12",
+      status: "DRAFT",
+      notes: "",
+      latestVersionNumber: 0,
+      submittedAt: null,
+      approvedAt: null,
+      createdAt: "2020-01-06T00:00:00Z",
+      updatedAt: "2020-01-06T00:00:00Z",
+    };
+    renderForm({ initialReport: report, submitLabel: "Save changes" });
+    expect(screen.getByText(/past reporting week/i)).toBeInTheDocument();
+    expect(screen.getByText(/only when that week is selected/i)).toBeInTheDocument();
+  });
+
   it("associates visible labels with report controls", async () => {
     const user = userEvent.setup();
     renderForm();

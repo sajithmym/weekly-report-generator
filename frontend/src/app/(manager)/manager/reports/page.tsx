@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import Link from "next/link";
 import { Filter, RotateCcw } from "lucide-react";
 import { SubmissionRoster } from "@/features/reports/components/submission-roster";
+import { WeekStepper } from "@/features/reports/components/week-stepper";
 import { reportWeek } from "@/lib/report-week";
 import { useResource } from "@/lib/use-resource";
 import { managerApi } from "@/services/manager.api";
@@ -91,6 +92,19 @@ export default function ManagerReportsPage() {
 
   const reports = data?.data || [];
   const hasFilters = Object.values(filters).some(Boolean);
+  const rosterWeek = {
+    weekStart: appliedFilters.weekStart || reportWeek().weekStart,
+    weekEnd:
+      appliedFilters.weekEnd ||
+      appliedFilters.weekStart ||
+      reportWeek().weekEnd,
+  };
+  // Development-only trace of the effective week sent to the roster endpoint.
+  if (process.env.NODE_ENV !== "production") {
+    console.info(
+      `[team-reports] roster week ${rosterWeek.weekStart}..${rosterWeek.weekEnd}`,
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -182,14 +196,20 @@ export default function ManagerReportsPage() {
           )}
         </CardContent>
       </Card>
+      <WeekStepper
+        weekStart={rosterWeek.weekStart}
+        weekEnd={rosterWeek.weekEnd}
+        onChange={(weekStart) => {
+          const week = reportWeek(weekStart);
+          setFilters((current) => ({ ...current, ...week }));
+          setAppliedFilters((current) => ({ ...current, ...week }));
+          setPage(PAGINATION_SETTINGS.defaultPage);
+        }}
+      />
       <SubmissionRoster
-        key={`${appliedFilters.weekStart}:${appliedFilters.weekEnd}`}
-        weekStart={appliedFilters.weekStart || reportWeek().weekStart}
-        weekEnd={
-          appliedFilters.weekEnd ||
-          appliedFilters.weekStart ||
-          reportWeek().weekEnd
-        }
+        key={`${rosterWeek.weekStart}:${rosterWeek.weekEnd}`}
+        weekStart={rosterWeek.weekStart}
+        weekEnd={rosterWeek.weekEnd}
       />
       {loading ? (
         <LoadingState message="Loading team reports..." />
