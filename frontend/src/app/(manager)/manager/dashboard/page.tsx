@@ -48,13 +48,6 @@ const COLORS = CHART_SETTINGS.palette;
 
 export default function ManagerDashboardPage() {
   const [week, setWeek] = useState(() => reportWeek());
-  // Development-only trace: shows which week this dashboard requests, so
-  // submitted-week vs selected-week questions can be answered from the console.
-  if (process.env.NODE_ENV !== "production") {
-    console.info(
-      `[dashboard] requested reporting week ${week.weekStart}..${week.weekEnd}`,
-    );
-  }
   const loader = useCallback(async () => {
     const [
       summary,

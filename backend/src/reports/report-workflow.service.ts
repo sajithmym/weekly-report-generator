@@ -1,6 +1,5 @@
 import {
   Injectable,
-  Logger,
   BadRequestException,
   NotFoundException,
   ForbiddenException,
@@ -9,7 +8,7 @@ import { Prisma } from "@prisma/client";
 import { PrismaService } from "../database/prisma.service";
 import { ReportStatus, ReviewAction } from "../common/enums";
 import { lockReport } from "./report-lock";
-import { REPORT_SETTINGS, SERVER_SETTINGS } from "../settings";
+import { REPORT_SETTINGS } from "../settings";
 
 type SnapshotReport = Prisma.ReportGetPayload<{
   include: {
@@ -24,14 +23,7 @@ type SnapshotReport = Prisma.ReportGetPayload<{
 
 @Injectable()
 export class ReportWorkflowService {
-  private readonly logger = new Logger(ReportWorkflowService.name);
-
   constructor(private prisma: PrismaService) {}
-
-  /** Development-only tracing for submitted-week visibility questions. Never logs report content. */
-  private debugLog(message: string) {
-    if (SERVER_SETTINGS.nodeEnv !== "production") this.logger.debug(message);
-  }
 
   /**
    * Submit a report (DRAFT or NEEDS_CORRECTION → SUBMITTED)
@@ -106,14 +98,7 @@ export class ReportWorkflowService {
           snapshotJson: this.createSnapshot(report),
           createdById: userId,
         },
-      }); // Defensive by design: a tracing log must never break submission.
-      const weekStart = report.weekStart
-        ? new Date(report.weekStart).toISOString()
-        : "unknown";
-      this.debugLog(
-        `submitted reportId=${reportId} userId=${userId} ` +
-          `weekStart=${weekStart} status=${ReportStatus.SUBMITTED}`,
-      );
+      });
 
       return tx.report.findUniqueOrThrow({ where: { id: reportId } });
     });

@@ -122,23 +122,16 @@ export function WeeklyReportForm({
     if (saving || saveInProgress.current) return;
     saveInProgress.current = true;
     try {
-      await handleSubmit((data) => {
-        // Development-only trace of the reporting week being saved, so
-        // "wrong week" submissions can be confirmed from the console.
-        if (process.env.NODE_ENV !== "production") {
-          console.info(
-            `[report-form] saving week ${data.weekStart}..${data.weekEnd}`,
-          );
-        }
-        return onSave({
+      await handleSubmit((data) =>
+        onSave({
           ...data,
           projectId: data.projectId || null,
           nextWeekTasks: data.nextWeekTasks.map((task, sortOrder) => ({
             ...task,
             sortOrder,
           })),
-        });
-      })(event);
+        }),
+      )(event);
     } catch (error) {
       setError("root.server", {
         message: getErrorMessage(

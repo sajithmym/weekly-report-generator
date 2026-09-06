@@ -99,12 +99,6 @@ export default function ManagerReportsPage() {
       appliedFilters.weekStart ||
       reportWeek().weekEnd,
   };
-  // Development-only trace of the effective week sent to the roster endpoint.
-  if (process.env.NODE_ENV !== "production") {
-    console.info(
-      `[team-reports] roster week ${rosterWeek.weekStart}..${rosterWeek.weekEnd}`,
-    );
-  }
 
   return (
     <div className="space-y-6">
