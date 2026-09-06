@@ -50,11 +50,17 @@ export function useResource<T>(loader: () => Promise<T>) {
   // Keep the current view mounted during refresh; never carry data across filters or IDs.
   const data = sameLoader ? state.data : undefined;
   const reload = useCallback(() => setRevision((value) => value + 1), []);
+  // After a write, old status/actions are no longer safe to display if the next read fails.
+  const invalidate = useCallback(() => {
+    setState(undefined);
+    setRevision((value) => value + 1);
+  }, []);
   return {
     data,
     error: current ? state.error : undefined,
     loading: !current && data === undefined,
     refreshing: !current && data !== undefined,
     reload,
+    invalidate,
   };
 }

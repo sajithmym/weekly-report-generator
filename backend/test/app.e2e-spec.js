@@ -1,13 +1,7 @@
-const { Test } = require("@nestjs/testing");
 const { JwtService } = require("@nestjs/jwt");
-const { ValidationPipe } = require("@nestjs/common");
 const request = require("supertest");
 const bcrypt = require("bcrypt");
-const cookieParser = require("cookie-parser");
-const helmet = require("helmet");
-const { AppModule } = require("../src/app.module");
-const { PrismaService } = require("../src/database/prisma.service");
-const { GlobalExceptionFilter } = require("../src/common/filters");
+const { createTestApp } = require("./helpers/create-test-app");
 const { ReportsService } = require("../src/reports/reports.service");
 const { AUTH_SETTINGS, SERVER_SETTINGS } = require("../src/settings");
 
@@ -35,33 +29,7 @@ describe("HTTP authorization, reports, and dashboard with an isolated PostgreSQL
   };
   const auth = (role) => ({ Authorization: `Bearer ${tokens[role]}` });
   beforeAll(async () => {
-    const module = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
-    app = module.createNestApplication();
-    app.setGlobalPrefix("api/v1");
-    app.use(helmet());
-    app.use(cookieParser());
-    app.enableCors({
-      origin: SERVER_SETTINGS.frontendUrl,
-      credentials: true,
-      methods: SERVER_SETTINGS.cors.methods,
-      allowedHeaders: [
-        ...SERVER_SETTINGS.cors.allowedHeaders,
-        AUTH_SETTINGS.csrfHeaderName,
-      ],
-    });
-    app.useGlobalPipes(
-      new ValidationPipe({
-        whitelist: true,
-        forbidNonWhitelisted: true,
-        transform: true,
-      }),
-    );
-    app.useGlobalFilters(new GlobalExceptionFilter());
-    await app.init();
-    http = app.getHttpServer();
-    prisma = app.get(PrismaService);
+    ({ app, http, prisma } = await createTestApp());
     const passwordHash = await bcrypt.hash("password123", 4);
     [member, other, manager, admin] = await Promise.all(
       ["TEAM_MEMBER", "TEAM_MEMBER", "MANAGER", "ADMIN"].map((role, index) =>

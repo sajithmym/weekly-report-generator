@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDate, formatDateTime, formatMinutes } from "@/lib/utils";
 import type { Report, ReportContentData } from "@/types";
 import { REVIEW_ACTIONS } from "@/constants";
+import { REPORT_SETTINGS } from "@/lib/settings";
 
 function Section({
   title,
@@ -40,7 +41,7 @@ export function ReportContent({ content }: { content: ReportContentData }) {
             "No project selected"}
         </p>
       </Section>
-      <Section title="Tasks completed">
+      <Section title={REPORT_SETTINGS.taskSectionTitle}>
         {content.tasks?.length ? (
           <div className="overflow-x-auto">
             <table className="w-full min-w-[800px] text-left text-sm">

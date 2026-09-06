@@ -36,6 +36,7 @@ export default function ReportDetailPage() {
     loading,
     error,
     reload: fetchReport,
+    invalidate,
   } = useResource(loader);
 
   const handleSubmit = async () => {
@@ -49,7 +50,7 @@ export default function ReportDetailPage() {
         description: "A version snapshot was created for manager review.",
       });
       setShowSubmitConfirmation(false);
-      fetchReport();
+      invalidate();
     } catch (error) {
       toast({
         variant: "error",

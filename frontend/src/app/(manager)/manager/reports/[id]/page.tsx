@@ -48,6 +48,7 @@ export default function ManagerReportDetailPage() {
     loading,
     error,
     reload: fetchReport,
+    invalidate,
   } = useResource(loader);
 
   const handleApprove = async () => {
@@ -61,7 +62,7 @@ export default function ManagerReportDetailPage() {
         description: "The member can now view the completed review.",
       });
       setApproveConfirmationOpen(false);
-      fetchReport();
+      invalidate();
     } catch (error) {
       toast({
         variant: "error",
@@ -85,7 +86,7 @@ export default function ManagerReportDetailPage() {
         title: "Changes requested",
         description: "The member can now edit and resubmit the report.",
       });
-      fetchReport();
+      invalidate();
     } catch (error) {
       toast({
         variant: "error",

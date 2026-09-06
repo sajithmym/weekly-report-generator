@@ -36,7 +36,7 @@ DRAFT -> SUBMITTED -> APPROVED
                   \-> NEEDS_CORRECTION -> SUBMITTED
 ```
 
-Only the author may edit a `DRAFT` or `NEEDS_CORRECTION` report. Submission requires at least one named task; task status does not need to be `DONE`. A manager or admin may approve or request changes only while the report is `SUBMITTED`; change requests require a comment. Each submission creates an immutable full-content version snapshot, and reviews are linked to the version they acted on.
+Only the author may edit a `DRAFT` or `NEEDS_CORRECTION` report. Drafts may be incomplete; submission requires a selected project and at least one named task. Task status does not need to be `DONE`. The form and report view label this section "Tasks and progress" to include unfinished work. A manager or admin may approve or request changes only while the report is `SUBMITTED`; change requests require a comment. Each submission creates an immutable full-content version snapshot, and reviews are linked to the version they acted on.
 
 Dashboard reporting uses Monday-Sunday UTC weeks. Managers and administrators may see draft status/count metadata for compliance, but never draft content or private draft report IDs. Compliance counts member-weeks that have been submitted at least once; approval and correction do not remove that credit. `PENDING` means no report has been submitted for the selected week; `LATE` includes overdue missing reports and reports first submitted after the Sunday 23:59:59 UTC deadline.
 

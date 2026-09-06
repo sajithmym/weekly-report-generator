@@ -82,6 +82,7 @@ describe("ReportWorkflowService", () => {
         versionNumber: 1,
         createdById: draft.userId,
         snapshotJson: expect.objectContaining({
+          status: ReportStatus.SUBMITTED,
           id: draft.id,
           projectName: "Client Portal",
           tasks: draft.tasks,
@@ -98,7 +99,7 @@ describe("ReportWorkflowService", () => {
       "member-1",
       "Cannot submit report in APPROVED status",
     ],
-    [report({ tasks: [] }), "member-1", "Add at least one completed task before submitting."],
+    [report({ tasks: [] }), "member-1", "Add at least one named task before submitting."],
     [report({ projectId: null }), "member-1", "Select a project before submitting."],
     [
       report({ tasks: [{ taskName: "   ", status: "DONE" }] }),

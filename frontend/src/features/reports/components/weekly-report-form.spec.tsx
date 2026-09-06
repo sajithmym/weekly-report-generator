@@ -1,4 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 import { WeeklyReportForm } from "./weekly-report-form";
@@ -16,7 +22,11 @@ vi.mock("@/components/shared/entity-picker", () => ({
     onChange: (value: string) => void;
     id?: string;
   }) => (
-    <button id={id} type="button" onClick={() => onChange("project-1")}>
+    <button
+      id={id}
+      type="button"
+      onClick={() => onChange("11111111-1111-4111-8111-111111111111")}
+    >
       {value || emptyLabel}
     </button>
   ),
@@ -120,7 +130,7 @@ describe("WeeklyReportForm", () => {
     await waitFor(() =>
       expect(onSave).toHaveBeenCalledWith(
         expect.objectContaining({
-          projectId: "project-1",
+          projectId: "11111111-1111-4111-8111-111111111111",
           notes: "Release notes are ready.",
           tasks: [
             expect.objectContaining({
@@ -159,7 +169,119 @@ describe("WeeklyReportForm", () => {
 
     expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
     expect(screen.getByRole("button", { name: "Cancel" })).toBeDisabled();
+    expect(screen.getByLabelText("Notes and links")).toBeDisabled();
+    expect(screen.getByRole("button", { name: "Project" })).toBeDisabled();
   });
+
+  it("prevents repeated form submissions and preserves inputs when a save fails", async () => {
+    const user = userEvent.setup();
+    let reject!: (reason: Error) => void;
+    const pending = new Promise<void>((_resolve, fail) => {
+      reject = fail;
+    });
+    const onSave = vi
+      .fn()
+      .mockReturnValueOnce(pending)
+      .mockResolvedValueOnce(undefined);
+    renderForm({ onSave });
+    await user.type(screen.getByLabelText("Notes and links"), "Keep my draft");
+    const form = screen.getByRole("form", { name: "Weekly report" });
+    fireEvent.submit(form);
+    fireEvent.submit(form);
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(1));
+    expect(screen.getByRole("button", { name: "Saving..." })).toBeDisabled();
+    expect(screen.getByLabelText("Notes and links")).toBeDisabled();
+    await act(async () => reject(new Error("Network unavailable")));
+    expect(await screen.findByRole("alert")).toHaveTextContent(
+      "Network unavailable",
+    );
+    expect(screen.getByLabelText("Notes and links")).toHaveValue(
+      "Keep my draft",
+    );
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
+    expect(onSave).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        projectId: null,
+        notes: "Keep my draft",
+        tasks: [],
+      }),
+    );
+  });
+
+  it("uses the current reporting week when a new form opens after a week boundary", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-09-06T23:59:00Z"));
+      const props = {
+        submitLabel: "Save draft",
+        saving: false,
+        onSave: vi.fn(),
+        onCancel: vi.fn(),
+      };
+      const first = render(<WeeklyReportForm {...props} />);
+      expect(screen.getByLabelText("Week end")).toHaveValue("2026-09-06");
+      first.unmount();
+      vi.setSystemTime(new Date("2026-09-07T00:01:00Z"));
+      render(<WeeklyReportForm {...props} />);
+      expect(screen.getByLabelText("Week end")).toHaveValue("2026-09-13");
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("saves all sections and renumbers next-week tasks after removing an entry", async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderForm();
+    const add = screen.getAllByRole("button", { name: "Add" });
+    await user.click(add[0]);
+    await user.type(screen.getByLabelText("Task"), "First feature");
+    await user.click(add[1]);
+    await user.click(add[1]);
+    await user.type(screen.getByLabelText("Task 1"), "Remove this");
+    await user.type(screen.getByLabelText("Task 2"), "Keep this");
+    // The first removal control belongs to the current-week task.
+    await user.click(screen.getAllByRole("button", { name: "Remove item" })[1]);
+    await user.click(add[1]);
+    await user.type(screen.getByLabelText("Task 2"), "Then this");
+    await user.click(add[2]);
+    await user.type(screen.getByLabelText("Blocker"), "Awaiting access");
+    await user.click(screen.getByRole("checkbox", { name: "Key issue" }));
+    await user.click(add[3]);
+    await user.type(screen.getByLabelText("Achievement"), "First delivery");
+    await user.click(screen.getByRole("checkbox", { name: "Key achievement" }));
+    await user.click(add[4]);
+    await user.clear(screen.getByLabelText("Minutes"));
+    await user.type(screen.getByLabelText("Minutes"), "90");
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+    await waitFor(() =>
+      expect(onSave).toHaveBeenCalledWith(
+        expect.objectContaining({
+          tasks: [
+            expect.objectContaining({
+              taskName: "First feature",
+              status: "TODO",
+            }),
+          ],
+          nextWeekTasks: [
+            { description: "Keep this", sortOrder: 0 },
+            { description: "Then this", sortOrder: 1 },
+          ],
+          blockers: [
+            {
+              description: "Awaiting access",
+              isKeyIssue: true,
+              isResolved: false,
+            },
+          ],
+          achievements: [
+            { description: "First delivery", isKeyAchievement: true },
+          ],
+          workHours: [{ type: "DEVELOPMENT", minutes: 90 }],
+        }),
+      ),
+    );
+  }, 15_000);
 
   it("marks custom picker changes as unsaved", async () => {
     const user = userEvent.setup();
@@ -192,12 +314,31 @@ describe("WeeklyReportForm", () => {
       onSave: vi.fn(),
       onCancel: vi.fn(),
     };
-    const { rerender } = render(<WeeklyReportForm {...props} initialReport={report} />);
-    rerender(<WeeklyReportForm {...props} initialReport={{ ...report, notes: "Refreshed notes" }} />);
-    expect(screen.getByLabelText("Notes and links")).toHaveValue("Refreshed notes");
+    const { rerender } = render(
+      <WeeklyReportForm {...props} initialReport={report} />,
+    );
+    rerender(
+      <WeeklyReportForm
+        {...props}
+        initialReport={{ ...report, notes: "Refreshed notes" }}
+      />,
+    );
+    expect(screen.getByLabelText("Notes and links")).toHaveValue(
+      "Refreshed notes",
+    );
 
-    await user.type(screen.getByLabelText("Notes and links"), " with local edits");
-    rerender(<WeeklyReportForm {...props} initialReport={{ ...report, notes: "Later server notes" }} />);
-    expect(screen.getByLabelText("Notes and links")).toHaveValue("Refreshed notes with local edits");
+    await user.type(
+      screen.getByLabelText("Notes and links"),
+      " with local edits",
+    );
+    rerender(
+      <WeeklyReportForm
+        {...props}
+        initialReport={{ ...report, notes: "Later server notes" }}
+      />,
+    );
+    expect(screen.getByLabelText("Notes and links")).toHaveValue(
+      "Refreshed notes with local edits",
+    );
   });
 });

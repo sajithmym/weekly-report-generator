@@ -12,6 +12,7 @@ import { ReportStatus, UserRole } from "../common/enums";
 import { lockReport } from "./report-lock";
 import { validateReportWeek, weekOf, DAY_MS } from "./report-date";
 import { REPORT_SETTINGS } from "../settings";
+import { rethrowReportWriteError } from "./report-write-error";
 
 @Injectable()
 export class ReportsService {
@@ -117,7 +118,7 @@ export class ReportsService {
         workHours: true,
         project: true,
       },
-    });
+    }).catch(rethrowReportWriteError);
   }
 
   async findMyReports(userId: string, pagination: ReportFilterDto) {
@@ -337,7 +338,7 @@ export class ReportsService {
           workHours: true,
         },
       });
-    });
+    }).catch(rethrowReportWriteError);
   }
 
   async findByFilters(filters: ReportFilterDto) {

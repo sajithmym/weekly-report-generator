@@ -29,7 +29,7 @@ export default function NewReportPage() {
     <div className="space-y-6">
       <PageHeader
         title="Create weekly report"
-        description="Save a complete draft, then submit it for manager review."
+        description="Start a draft, then submit it when it is ready for review."
         refreshDisabled={saving}
       />
       <WeeklyReportForm

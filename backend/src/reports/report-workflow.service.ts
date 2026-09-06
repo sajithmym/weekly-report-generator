@@ -35,7 +35,7 @@ export class ReportWorkflowService {
         where: { id: reportId },
         include: {
           tasks: true,
-          nextWeekTasks: true,
+          nextWeekTasks: { orderBy: { sortOrder: "asc" } },
           blockers: true,
           achievements: true,
           workHours: true,
@@ -67,9 +67,9 @@ export class ReportWorkflowService {
       }
 
       if (!report.projectId)
-        throw new BadRequestException("Select a project before submitting.");
+        throw new BadRequestException(REPORT_SETTINGS.messages.projectRequiredForSubmission);
       if (report.tasks.some((task) => !task.taskName.trim()))
-        throw new BadRequestException("Task names cannot be blank.");
+        throw new BadRequestException(REPORT_SETTINGS.messages.blankTaskName);
 
       const nextVersion = report.latestVersionNumber + 1;
       const transitioned = await tx.report.updateMany({
@@ -221,7 +221,7 @@ export class ReportWorkflowService {
       projectName: report.project?.name || null,
       weekStart: report.weekStart,
       weekEnd: report.weekEnd,
-      status: report.status,
+      status: ReportStatus.SUBMITTED,
       notes: report.notes,
       tasks: report.tasks,
       nextWeekTasks: report.nextWeekTasks,

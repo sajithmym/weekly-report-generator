@@ -13,6 +13,20 @@ function deferred<T>() {
 }
 
 describe("useResource", () => {
+  it("discards obsolete state after a mutation even when the next read fails", async () => {
+    const loader = vi.fn<() => Promise<string>>()
+      .mockResolvedValueOnce("DRAFT")
+      .mockRejectedValueOnce(new Error("Could not fetch submitted report"))
+      .mockResolvedValueOnce("SUBMITTED");
+    const { result } = renderHook(() => useResource(loader));
+    await waitFor(() => expect(result.current.data).toBe("DRAFT"));
+    act(() => result.current.invalidate());
+    expect(result.current.data).toBeUndefined();
+    await waitFor(() => expect(result.current.error).toBe("Could not fetch submitted report"));
+    expect(result.current.data).toBeUndefined();
+    act(() => result.current.reload());
+    await waitFor(() => expect(result.current.data).toBe("SUBMITTED"));
+  });
   it("returns loaded data and exposes a reload function", async () => {
     const loader = vi
       .fn<() => Promise<string>>()

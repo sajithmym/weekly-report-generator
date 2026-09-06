@@ -1,5 +1,18 @@
 import { z } from "zod";
 import { REPORT_SETTINGS, VALIDATION_SETTINGS } from "@/lib/settings";
+import { reportWeek } from "@/lib/report-week";
+
+const reportingDateSchema = z
+  .string()
+  .trim()
+  .refine((value) => {
+    if (!VALIDATION_SETTINGS.datePattern.test(value)) return false;
+    const date = new Date(value);
+    return (
+      Number.isFinite(date.getTime()) &&
+      date.toISOString().slice(0, 10) === value
+    );
+  }, "Enter a valid date using YYYY-MM-DD");
 
 const taskSchema = z.object({
   taskName: z
@@ -34,10 +47,10 @@ const taskSchema = z.object({
   actualMinutes: z
     .number()
     .int()
-    .min(VALIDATION_SETTINGS.sortOrder.min)
+    .min(VALIDATION_SETTINGS.minutes.min)
     .max(VALIDATION_SETTINGS.minutes.max)
     .default(REPORT_SETTINGS.defaultNumericValue),
-  deliverable: z.string().max(VALIDATION_SETTINGS.description.max).optional(),
+  deliverable: z.string().max(VALIDATION_SETTINGS.deliverable.max).optional(),
 });
 
 const nextWeekTaskSchema = z.object({
@@ -49,7 +62,7 @@ const nextWeekTaskSchema = z.object({
   sortOrder: z
     .number()
     .int()
-    .min(VALIDATION_SETTINGS.minutes.min)
+    .min(VALIDATION_SETTINGS.sortOrder.min)
     .default(REPORT_SETTINGS.defaultNumericValue),
 });
 
@@ -83,21 +96,33 @@ const workHourSchema = z.object({
 
 export const reportFormSchema = z
   .object({
-    projectId: z.string().nullable().optional(),
-    weekStart: z
-      .string()
-      .trim()
-      .min(VALIDATION_SETTINGS.requiredText.min, "Week start is required"),
-    weekEnd: z
-      .string()
-      .trim()
-      .min(VALIDATION_SETTINGS.requiredText.min, "Week end is required"),
+    projectId: z
+      .union([z.string().uuid("Select a valid project"), z.literal("")])
+      .nullable()
+      .optional(),
+    weekStart: reportingDateSchema,
+    weekEnd: reportingDateSchema,
     notes: z.string().max(VALIDATION_SETTINGS.reportNotes.max).optional(),
-    tasks: z.array(taskSchema).max(REPORT_SETTINGS.maxItemsPerSection).default([]),
-    nextWeekTasks: z.array(nextWeekTaskSchema).max(REPORT_SETTINGS.maxItemsPerSection).default([]),
-    blockers: z.array(blockerSchema).max(REPORT_SETTINGS.maxItemsPerSection).default([]),
-    achievements: z.array(achievementSchema).max(REPORT_SETTINGS.maxItemsPerSection).default([]),
-    workHours: z.array(workHourSchema).max(REPORT_SETTINGS.maxItemsPerSection).default([]),
+    tasks: z
+      .array(taskSchema)
+      .max(REPORT_SETTINGS.maxItemsPerSection)
+      .default([]),
+    nextWeekTasks: z
+      .array(nextWeekTaskSchema)
+      .max(REPORT_SETTINGS.maxItemsPerSection)
+      .default([]),
+    blockers: z
+      .array(blockerSchema)
+      .max(REPORT_SETTINGS.maxItemsPerSection)
+      .default([]),
+    achievements: z
+      .array(achievementSchema)
+      .max(REPORT_SETTINGS.maxItemsPerSection)
+      .default([]),
+    workHours: z
+      .array(workHourSchema)
+      .max(REPORT_SETTINGS.maxItemsPerSection)
+      .default([]),
   })
   .refine(
     (data) => {
@@ -110,6 +135,41 @@ export const reportFormSchema = z
       message: "Week end must be after or equal to week start",
       path: ["weekEnd"],
     },
-  );
+  )
+  .superRefine((data, context) => {
+    if (
+      reportingDateSchema.safeParse(data.weekStart).success &&
+      reportingDateSchema.safeParse(data.weekEnd).success
+    ) {
+      const week = reportWeek(data.weekStart);
+      if (data.weekStart !== week.weekStart)
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["weekStart"],
+          message: "Reporting weeks must start on Monday",
+        });
+      if (data.weekEnd !== week.weekEnd)
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["weekEnd"],
+          message: "Reporting weeks must end on the following Sunday",
+        });
+    }
+    if (data.blockers.filter((blocker) => blocker.isKeyIssue).length > 1)
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["blockers"],
+        message: "Select at most one key issue",
+      });
+    if (
+      data.achievements.filter((achievement) => achievement.isKeyAchievement)
+        .length > 1
+    )
+      context.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ["achievements"],
+        message: "Select at most one key achievement",
+      });
+  });
 
 export type ReportFormData = z.infer<typeof reportFormSchema>;
