@@ -29,6 +29,16 @@ describe("authentication form schemas", () => {
     ).toMatchObject({ name: "Asha Perera", email: "asha@example.com" });
   });
 
+  it.each([
+    [{ name: "Asha Perera", email: "asha@example.com", password: "short", confirmPassword: "short" }, "Password must be at least 8 characters"],
+    [{ name: "Asha Perera", email: "asha@example.com", password: "p".repeat(129), confirmPassword: "p".repeat(129) }, "Password must be at most 128 characters"],
+  ])("rejects out-of-range registration passwords", (input, message) => {
+    expect(registerSchema.safeParse(input)).toMatchObject({
+      success: false,
+      error: { issues: [expect.objectContaining({ message })] },
+    });
+  });
+
   it("rejects an invalid name, email, and password mismatch", () => {
     const result = registerSchema.safeParse({
       name: "A",

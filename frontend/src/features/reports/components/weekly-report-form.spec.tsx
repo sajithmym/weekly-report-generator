@@ -202,6 +202,19 @@ describe("WeeklyReportForm", () => {
     expect(screen.getByRole("button", { name: "Project" })).toBeDisabled();
   });
 
+  it("blocks saving until a project and at least one task are provided", async () => {
+    const user = userEvent.setup();
+    const { onSave } = renderForm();
+
+    await user.click(screen.getByRole("button", { name: "Save draft" }));
+
+    expect(onSave).not.toHaveBeenCalled();
+    expect(await screen.findByText("Select a project")).toBeInTheDocument();
+    expect(
+      screen.getByText(/Add at least one task before saving/i),
+    ).toBeInTheDocument();
+  });
+
   it("prevents repeated form submissions and preserves inputs when a save fails", async () => {
     const user = userEvent.setup();
     let reject!: (reason: Error) => void;
@@ -213,6 +226,9 @@ describe("WeeklyReportForm", () => {
       .mockReturnValueOnce(pending)
       .mockResolvedValueOnce(undefined);
     renderForm({ onSave });
+    await user.click(screen.getByRole("button", { name: "Project" }));
+    await user.click(screen.getAllByRole("button", { name: "Add" })[0]);
+    await user.type(screen.getByPlaceholderText("Task name"), "Steady task");
     await user.type(screen.getByLabelText("Notes and links"), "Keep my draft");
     const form = screen.getByRole("form", { name: "Weekly report" });
     fireEvent.submit(form);
@@ -231,9 +247,9 @@ describe("WeeklyReportForm", () => {
     await waitFor(() => expect(onSave).toHaveBeenCalledTimes(2));
     expect(onSave).toHaveBeenLastCalledWith(
       expect.objectContaining({
-        projectId: null,
+        projectId: "11111111-1111-4111-8111-111111111111",
         notes: "Keep my draft",
-        tasks: [],
+        tasks: [expect.objectContaining({ taskName: "Steady task" })],
       }),
     );
   });
@@ -262,6 +278,7 @@ describe("WeeklyReportForm", () => {
   it("saves all sections and renumbers next-week tasks after removing an entry", async () => {
     const user = userEvent.setup();
     const { onSave } = renderForm();
+    await user.click(screen.getByRole("button", { name: "Project" }));
     const add = screen.getAllByRole("button", { name: "Add" });
     await user.click(add[0]);
     await user.type(screen.getByLabelText("Task"), "First feature");

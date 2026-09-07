@@ -4,6 +4,7 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ReportStatus, UserRole } from "../common/enums";
+import { CreateReportDto } from "./dto";
 import { ReportsService } from "./reports.service";
 
 describe("ReportsService", () => {
@@ -40,11 +41,16 @@ describe("ReportsService", () => {
     const { service, prisma } = createService();
     const created = { id: "report-1", status: ReportStatus.DRAFT };
     prisma.report.findFirst.mockResolvedValue(null);
+    prisma.project.findUnique.mockResolvedValue({
+      id: "project-1",
+      isActive: true,
+    });
     prisma.report.create.mockResolvedValue(created);
 
     await expect(
       service.create("member-1", {
         ...dates,
+        projectId: "project-1",
         tasks: [{ taskName: "Deliver feature" }],
         nextWeekTasks: [{ description: "Follow up" }],
         blockers: [{ description: "Waiting" }],
@@ -80,14 +86,41 @@ describe("ReportsService", () => {
     );
   });
 
+  it("requires a project and at least one named task before creating", async () => {
+    const { service, prisma } = createService();
+
+    // Casts keep the invalid payloads intentional: these fields are required
+    // at the DTO layer, and this test covers the service-level safety net.
+    await expect(
+      service.create("member-1", {
+        ...dates,
+        tasks: [{ taskName: "Deliver feature" }],
+      } as CreateReportDto),
+    ).rejects.toThrow("Select a project before saving the report.");
+    await expect(
+      service.create(
+        "member-1",
+        { ...dates, projectId: "project-1" } as CreateReportDto,
+      ),
+    ).rejects.toThrow("Add at least one named task before submitting.");
+    expect(prisma.report.create).not.toHaveBeenCalled();
+  });
+
   it.each([
     [
-      { ...dates, blockers: [{ description: "A", isKeyIssue: true }, { description: "B", isKeyIssue: true }] },
+      {
+        ...dates,
+        projectId: "project-1",
+        tasks: [{ taskName: "Task" }],
+        blockers: [{ description: "A", isKeyIssue: true }, { description: "B", isKeyIssue: true }],
+      },
       "Only one blocker can be marked as the key issue",
     ],
     [
       {
         ...dates,
+        projectId: "project-1",
+        tasks: [{ taskName: "Task" }],
         achievements: [
           { description: "A", isKeyAchievement: true },
           { description: "B", isKeyAchievement: true },
@@ -97,6 +130,10 @@ describe("ReportsService", () => {
     ],
   ])("rejects invalid key item combinations before persistence", async (dto, message) => {
     const { service, prisma } = createService();
+    prisma.project.findUnique.mockResolvedValue({
+      id: "project-1",
+      isActive: true,
+    });
 
     await expect(service.create("member-1", dto)).rejects.toThrow(message);
     expect(prisma.report.create).not.toHaveBeenCalled();
@@ -104,20 +141,36 @@ describe("ReportsService", () => {
 
   it("rejects duplicate weekly reports and inactive or missing projects", async () => {
     const { service, prisma } = createService();
+    prisma.project.findUnique.mockResolvedValue({
+      id: "project-1",
+      isActive: true,
+    });
     prisma.report.findFirst.mockResolvedValueOnce({ id: "existing" });
-    await expect(service.create("member-1", dates)).rejects.toBeInstanceOf(
-      BadRequestException,
-    );
+    await expect(
+      service.create("member-1", {
+        ...dates,
+        projectId: "project-1",
+        tasks: [{ taskName: "Deliver feature" }],
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
 
     prisma.report.findFirst.mockResolvedValueOnce(null).mockResolvedValueOnce(null);
     prisma.project.findUnique
       .mockResolvedValueOnce(null)
       .mockResolvedValueOnce({ id: "project-1", isActive: false });
     await expect(
-      service.create("member-1", { ...dates, projectId: "project-1" }),
+      service.create("member-1", {
+        ...dates,
+        projectId: "project-1",
+        tasks: [{ taskName: "Deliver feature" }],
+      }),
     ).rejects.toBeInstanceOf(NotFoundException);
     await expect(
-      service.create("member-1", { ...dates, projectId: "project-1" }),
+      service.create("member-1", {
+        ...dates,
+        projectId: "project-1",
+        tasks: [{ taskName: "Deliver feature" }],
+      }),
     ).rejects.toThrow("Project is deactivated and cannot be used");
   });
 

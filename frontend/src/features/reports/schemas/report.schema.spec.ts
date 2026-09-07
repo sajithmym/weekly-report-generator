@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { reportFormSchema } from "./report.schema";
 
-const week = { weekStart: "2026-08-31", weekEnd: "2026-09-06" };
+const projectId = "11111111-1111-4111-8111-111111111111";
+const week = {
+  projectId,
+  weekStart: "2026-08-31",
+  weekEnd: "2026-09-06",
+  tasks: [{ taskName: "Base task" }],
+};
 
 describe("weekly report form schema", () => {
   it.each([
@@ -19,19 +25,53 @@ describe("weekly report form schema", () => {
     { weekStart: "2026-12-28", weekEnd: "2027-01-03" },
     { weekStart: "2024-02-26", weekEnd: "2024-03-03" },
   ])("accepts valid year and leap-year boundaries: %j", (range) => {
-    expect(reportFormSchema.safeParse(range).success).toBe(true);
-  });
-
-  it("allows incomplete drafts but validates project references and key selections", () => {
-    expect(
-      reportFormSchema.safeParse({ ...week, projectId: null }).success,
-    ).toBe(true);
-    expect(reportFormSchema.safeParse({ ...week, projectId: "" }).success).toBe(
+    expect(reportFormSchema.safeParse({ ...week, ...range }).success).toBe(
       true,
     );
+  });
+
+  it("requires a project and at least one named task before saving", () => {
+    expect(
+      reportFormSchema.safeParse({ ...week, projectId: "" }).success,
+    ).toBe(false);
+    expect(
+      reportFormSchema.safeParse({ ...week, projectId: null }).success,
+    ).toBe(false);
     expect(
       reportFormSchema.safeParse({ ...week, projectId: "invalid" }).success,
     ).toBe(false);
+    expect(reportFormSchema.safeParse({ ...week, tasks: [] }).success).toBe(
+      false,
+    );
+    expect(
+      reportFormSchema.safeParse({
+        ...week,
+        tasks: [{ taskName: " " }],
+      }).success,
+    ).toBe(false);
+
+    const emptyProject = reportFormSchema.safeParse({ ...week, projectId: "" });
+    expect(emptyProject).toMatchObject({ success: false });
+    if (!emptyProject.success)
+      expect(emptyProject.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({ message: "Select a project" }),
+        ]),
+      );
+
+    const noTasks = reportFormSchema.safeParse({ ...week, tasks: [] });
+    expect(noTasks).toMatchObject({ success: false });
+    if (!noTasks.success)
+      expect(noTasks.error.issues).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            message: "Add at least one task before saving",
+          }),
+        ]),
+      );
+  });
+
+  it("still validates key selections while requiring the project and task", () => {
     expect(
       reportFormSchema.safeParse({
         ...week,
@@ -51,6 +91,7 @@ describe("weekly report form schema", () => {
       }).success,
     ).toBe(false);
   });
+
   it("trims content and applies report defaults", () => {
     const result = reportFormSchema.parse({
       ...week,
@@ -115,6 +156,7 @@ describe("weekly report form schema", () => {
 
   it("rejects a reporting range that ends before it begins", () => {
     const result = reportFormSchema.safeParse({
+      ...week,
       weekStart: "2026-09-07",
       weekEnd: "2026-09-06",
     });

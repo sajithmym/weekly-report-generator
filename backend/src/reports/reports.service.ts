@@ -19,6 +19,18 @@ export class ReportsService {
   constructor(private prisma: PrismaService) {}
 
   async create(userId: string, dto: CreateReportDto) {
+    // The DTO already enforces these; repeat them here so every caller of the
+    // service (not only the HTTP pipeline) gets the same guarantee.
+    if (!dto.projectId) {
+      throw new BadRequestException(
+        REPORT_SETTINGS.messages.projectRequired,
+      );
+    }
+    if (!dto.tasks?.length) {
+      throw new BadRequestException(
+        REPORT_SETTINGS.messages.reportRequiresTask,
+      );
+    }
     validateReportWeek(new Date(dto.weekStart), new Date(dto.weekEnd));
     this.ensureSingleKeyItem(
       dto.blockers,
@@ -258,8 +270,7 @@ export class ReportsService {
       return tx.report.update({
         where: { id },
         data: {
-          projectId:
-            dto.projectId === undefined ? undefined : dto.projectId || null,
+          projectId: dto.projectId,
           weekStart: dto.weekStart ? new Date(dto.weekStart) : undefined,
           weekEnd: dto.weekEnd ? new Date(dto.weekEnd) : undefined,
           notes: dto.notes,

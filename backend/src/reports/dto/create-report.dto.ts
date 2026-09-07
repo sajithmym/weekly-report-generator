@@ -1,6 +1,5 @@
 import {
   IsString,
-  IsOptional,
   IsDateString,
   IsArray,
   ValidateNested,
@@ -12,6 +11,7 @@ import {
   IsBoolean,
   IsUUID,
   ArrayMaxSize,
+  ArrayMinSize,
   ValidateIf,
   MinLength,
   Matches,
@@ -124,9 +124,8 @@ class CreateWorkHourDto {
 }
 
 export class CreateReportDto {
-  @IsOptional()
   @IsUUID()
-  projectId?: string | null;
+  projectId: string;
 
   @Matches(VALIDATION_SETTINGS.datePattern)
   @IsDateString({ strict: true })
@@ -141,12 +140,12 @@ export class CreateReportDto {
   @MaxLength(VALIDATION_SETTINGS.reportNotes.max)
   notes?: string;
 
-  @ValidateIf((_object, value) => value !== undefined)
   @IsArray()
+  @ArrayMinSize(REPORT_SETTINGS.minTasksForSubmission)
   @ArrayMaxSize(REPORT_SETTINGS.maxItemsPerSection)
   @ValidateNested({ each: true })
   @Type(() => CreateTaskDto)
-  tasks?: CreateTaskDto[];
+  tasks: CreateTaskDto[];
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsArray()

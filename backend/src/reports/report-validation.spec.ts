@@ -22,16 +22,41 @@ describe("Report input and reporting calendar", () => {
       });
     },
   );
-  it("allows explicit project clearing but rejects non-UUID associations", async () => {
-    await expect(validate({ projectId: null }, true)).resolves.toMatchObject({
-      projectId: null,
-    });
-    await expect(validate({ projectId: "" }, true)).rejects.toMatchObject({
+  it("requires a project on create and rejects malformed or cleared project references", async () => {
+    const week = { weekStart: "2026-08-31", weekEnd: "2026-09-06" };
+    const projectId = "11111111-1111-4111-8111-111111111111";
+    // A project and at least one task are mandatory on create.
+    await expect(validate(week)).rejects.toMatchObject({ status: 400 });
+    await expect(validate({ ...week, projectId })).rejects.toMatchObject({
       status: 400,
     });
+    await expect(validate({ ...week, projectId: "" })).rejects.toMatchObject({
+      status: 400,
+    });
+    await expect(
+      validate({ ...week, projectId: "invalid" }),
+    ).rejects.toMatchObject({ status: 400 });
+    // Clearing the project on PATCH is rejected so reports always keep one.
+    await expect(validate({ projectId: null }, true)).rejects.toMatchObject({
+      status: 400,
+    });
+    // A valid project reference is accepted on both create and update.
+    await expect(
+      validate({ ...week, projectId, tasks: [{ taskName: "Task" }] }),
+    ).resolves.toMatchObject({ projectId });
+    await expect(validate({ projectId }, true)).resolves.toMatchObject({
+      projectId,
+    });
   });
-  it("rejects blank tasks, fractional minutes, and timestamps instead of date-only input", async () => {
-    const week = { weekStart: "2026-08-31", weekEnd: "2026-09-06" };
+  it("rejects blank tasks, empty task lists, fractional minutes, and timestamps instead of date-only input", async () => {
+    const week = {
+      projectId: "11111111-1111-4111-8111-111111111111",
+      weekStart: "2026-08-31",
+      weekEnd: "2026-09-06",
+    };
+    await expect(validate({ ...week, tasks: [] })).rejects.toMatchObject({
+      status: 400,
+    });
     await expect(
       validate({ ...week, tasks: [{ taskName: "   " }] }),
     ).rejects.toMatchObject({ status: 400 });

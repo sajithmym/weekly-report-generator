@@ -42,7 +42,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useToast } from "@/components/ui/toast";
-import { PAGINATION_SETTINGS, USER_ROLES } from "@/lib/settings";
+import {
+  PAGINATION_SETTINGS,
+  USER_ROLES,
+  VALIDATION_SETTINGS,
+} from "@/lib/settings";
 import { getErrorMessage } from "@/lib/utils";
 import { USER_ROLE_LABELS } from "@/constants";
 import type { PaginatedResponse, User } from "@/types";
@@ -60,6 +64,13 @@ const EMPTY_USER: CreateUserPayload = {
   password: "",
   role: USER_ROLES.TEAM_MEMBER,
 };
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+type UserFieldErrors = {
+  name?: string;
+  email?: string;
+  password?: string;
+};
 
 export default function ManagerUsersPage() {
   const { toast } = useToast();
@@ -75,6 +86,7 @@ export default function ManagerUsersPage() {
   const [createOpen, setCreateOpen] = useState(false);
   const [newUser, setNewUser] = useState<CreateUserPayload>(EMPTY_USER);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<UserFieldErrors>({});
   const [saving, setSaving] = useState(false);
   const [statusUser, setStatusUser] = useState<User | null>(null);
   const [roleDialogUser, setRoleDialogUser] = useState<User | null>(null);
@@ -107,14 +119,31 @@ export default function ManagerUsersPage() {
   const createUser = async () => {
     const name = newUser.name.trim();
     const email = newUser.email.trim();
-    if (name.length < 2 || !email || newUser.password.length < 8) {
-      setFormError(
-        "Enter a name, a valid email address, and a password with at least 8 characters.",
-      );
+    const nextErrors: UserFieldErrors = {};
+    if (name.length < VALIDATION_SETTINGS.name.min) {
+      nextErrors.name = `Full name must contain at least ${VALIDATION_SETTINGS.name.min} characters.`;
+    } else if (name.length > VALIDATION_SETTINGS.name.max) {
+      nextErrors.name = `Full name must contain at most ${VALIDATION_SETTINGS.name.max} characters.`;
+    }
+    if (!email) {
+      nextErrors.email = "Email address is required.";
+    } else if (email.length > VALIDATION_SETTINGS.email.max) {
+      nextErrors.email = `Email address must contain at most ${VALIDATION_SETTINGS.email.max} characters.`;
+    } else if (!EMAIL_PATTERN.test(email)) {
+      nextErrors.email = "Enter a valid email address.";
+    }
+    if (newUser.password.length < VALIDATION_SETTINGS.password.min) {
+      nextErrors.password = `Password must be at least ${VALIDATION_SETTINGS.password.min} characters.`;
+    } else if (newUser.password.length > VALIDATION_SETTINGS.password.max) {
+      nextErrors.password = `Password must be at most ${VALIDATION_SETTINGS.password.max} characters.`;
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
       return;
     }
     setSaving(true);
     setFormError(null);
+    setFieldErrors({});
     try {
       await usersApi.create({ ...newUser, name, email });
       toast({
@@ -210,6 +239,7 @@ export default function ManagerUsersPage() {
             <Button
               onClick={() => {
                 setFormError(null);
+                setFieldErrors({});
                 setNewUser(EMPTY_USER);
                 setCreateOpen(true);
               }}
@@ -419,11 +449,18 @@ export default function ManagerUsersPage() {
               <Input
                 id="user-name"
                 value={newUser.name}
-                onChange={(event) =>
-                  setNewUser({ ...newUser, name: event.target.value })
-                }
+                onChange={(event) => {
+                  setNewUser({ ...newUser, name: event.target.value });
+                  if (fieldErrors.name)
+                    setFieldErrors((current) => ({ ...current, name: undefined }));
+                }}
+                maxLength={VALIDATION_SETTINGS.name.max}
+                aria-invalid={Boolean(fieldErrors.name)}
                 autoFocus
               />
+              {fieldErrors.name && (
+                <p className="text-sm text-destructive">{fieldErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-email">Email address</Label>
@@ -431,10 +468,20 @@ export default function ManagerUsersPage() {
                 id="user-email"
                 type="email"
                 value={newUser.email}
-                onChange={(event) =>
-                  setNewUser({ ...newUser, email: event.target.value })
-                }
+                onChange={(event) => {
+                  setNewUser({ ...newUser, email: event.target.value });
+                  if (fieldErrors.email)
+                    setFieldErrors((current) => ({
+                      ...current,
+                      email: undefined,
+                    }));
+                }}
+                maxLength={VALIDATION_SETTINGS.email.max}
+                aria-invalid={Boolean(fieldErrors.email)}
               />
+              {fieldErrors.email && (
+                <p className="text-sm text-destructive">{fieldErrors.email}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="user-password">Temporary password</Label>
@@ -442,10 +489,22 @@ export default function ManagerUsersPage() {
                 id="user-password"
                 type="password"
                 value={newUser.password}
-                onChange={(event) =>
-                  setNewUser({ ...newUser, password: event.target.value })
-                }
+                onChange={(event) => {
+                  setNewUser({ ...newUser, password: event.target.value });
+                  if (fieldErrors.password)
+                    setFieldErrors((current) => ({
+                      ...current,
+                      password: undefined,
+                    }));
+                }}
+                maxLength={VALIDATION_SETTINGS.password.max}
+                aria-invalid={Boolean(fieldErrors.password)}
               />
+              {fieldErrors.password && (
+                <p className="text-sm text-destructive">
+                  {fieldErrors.password}
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label>Role</Label>
@@ -519,6 +578,9 @@ export default function ManagerUsersPage() {
               Cancel
             </Button>
             <Button
+              disabled={
+                !roleDialogUser || selectedRole === roleDialogUser.role
+              }
               onClick={() => {
                 if (roleDialogUser && selectedRole !== roleDialogUser.role) {
                   setRoleChange({ user: roleDialogUser, role: selectedRole });

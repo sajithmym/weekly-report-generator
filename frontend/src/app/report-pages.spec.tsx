@@ -145,6 +145,12 @@ describe("report page workflows", () => {
       })
       .mockResolvedValueOnce(draft);
     render(<NewReportPage />);
+    await user.click(screen.getByRole("button", { name: "Select project" }));
+    await user.click(
+      await screen.findByRole("button", { name: "First project" }),
+    );
+    await user.click(screen.getAllByRole("button", { name: "Add" })[0]);
+    await user.type(screen.getByLabelText("Task"), "My retried task");
     await user.type(
       screen.getByLabelText("Notes and links"),
       "Do not lose this text",

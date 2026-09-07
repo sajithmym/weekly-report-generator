@@ -82,9 +82,19 @@ describe("frontend API services", () => {
       reportsApi.create({
         weekStart: "2026-08-31",
         weekEnd: "2026-09-06",
-        projectId: null,
+        projectId: "11111111-1111-4111-8111-111111111111",
         notes: "Draft",
-        tasks: [],
+        tasks: [
+          {
+            taskName: "Deliver feature",
+            priority: "MEDIUM" as const,
+            plannedPercentage: 0,
+            actualPercentage: 0,
+            status: "TODO" as const,
+            plannedMinutes: 0,
+            actualMinutes: 0,
+          },
+        ],
         nextWeekTasks: [],
         blockers: [],
         achievements: [],

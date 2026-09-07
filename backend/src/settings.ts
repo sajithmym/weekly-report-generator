@@ -178,6 +178,7 @@ export const REPORT_SETTINGS = {
     reportMustBeSubmitted: "Report is not in SUBMITTED status",
     reportAlreadyExists: "A weekly report already exists for this week.",
     reportRequiresTask: "Add at least one named task before submitting.",
+    projectRequired: "Select a project before saving the report.",
     projectRequiredForSubmission: "Select a project before submitting.",
     blankTaskName: "Task names cannot be blank.",
     cannotSubmitInStatus: (status: ReportStatus) =>

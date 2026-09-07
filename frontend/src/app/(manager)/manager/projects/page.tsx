@@ -31,7 +31,7 @@ import {
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/components/ui/toast";
-import { PAGINATION_SETTINGS } from "@/lib/settings";
+import { PAGINATION_SETTINGS, VALIDATION_SETTINGS } from "@/lib/settings";
 import { getErrorMessage } from "@/lib/utils";
 import type { PaginatedResponse, Project } from "@/types";
 
@@ -52,6 +52,10 @@ export default function ManagerProjectsPage() {
   const [projectForm, setProjectForm] =
     useState<ProjectForm>(EMPTY_PROJECT_FORM);
   const [formError, setFormError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<{
+    name?: string;
+    description?: string;
+  }>({});
   const [saving, setSaving] = useState(false);
   const [statusProject, setStatusProject] = useState<Project | null>(null);
   const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -75,6 +79,7 @@ export default function ManagerProjectsPage() {
     setEditingProject(null);
     setProjectForm(EMPTY_PROJECT_FORM);
     setFormError(null);
+    setFieldErrors({});
     setFormOpen(true);
   };
   const openEditDialog = (project: Project) => {
@@ -84,17 +89,29 @@ export default function ManagerProjectsPage() {
       description: project.description || "",
     });
     setFormError(null);
+    setFieldErrors({});
     setFormOpen(true);
   };
 
   const saveProject = async () => {
     const name = projectForm.name.trim();
-    if (name.length < 2) {
-      setFormError("Project name must contain at least 2 characters.");
+    const description = projectForm.description.trim();
+    const nextErrors: { name?: string; description?: string } = {};
+    if (name.length < VALIDATION_SETTINGS.projectName.min) {
+      nextErrors.name = `Project name must contain at least ${VALIDATION_SETTINGS.projectName.min} characters.`;
+    } else if (name.length > VALIDATION_SETTINGS.projectName.max) {
+      nextErrors.name = `Project name must contain at most ${VALIDATION_SETTINGS.projectName.max} characters.`;
+    }
+    if (description.length > VALIDATION_SETTINGS.projectDescription.max) {
+      nextErrors.description = `Description must contain at most ${VALIDATION_SETTINGS.projectDescription.max} characters.`;
+    }
+    if (Object.keys(nextErrors).length > 0) {
+      setFieldErrors(nextErrors);
       return;
     }
     setSaving(true);
     setFormError(null);
+    setFieldErrors({});
     try {
       const payload = { name, description: projectForm.description.trim() };
       if (editingProject) {
@@ -339,30 +356,51 @@ export default function ManagerProjectsPage() {
           </DialogHeader>
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="project-name">Project name</Label>
+              <Label htmlFor="project-name">
+                Project name<span className="ml-1 text-destructive">*</span>
+              </Label>
               <Input
                 id="project-name"
                 value={projectForm.name}
-                onChange={(event) =>
-                  setProjectForm({ ...projectForm, name: event.target.value })
-                }
+                onChange={(event) => {
+                  setProjectForm({ ...projectForm, name: event.target.value });
+                  if (fieldErrors.name)
+                    setFieldErrors((current) => ({ ...current, name: undefined }));
+                }}
                 placeholder="e.g. Client Portal"
+                maxLength={VALIDATION_SETTINGS.projectName.max}
+                aria-invalid={Boolean(fieldErrors.name)}
                 autoFocus
               />
+              {fieldErrors.name && (
+                <p className="text-sm text-destructive">{fieldErrors.name}</p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="project-description">Description</Label>
               <Textarea
                 id="project-description"
                 value={projectForm.description}
-                onChange={(event) =>
+                onChange={(event) => {
                   setProjectForm({
                     ...projectForm,
                     description: event.target.value,
-                  })
-                }
+                  });
+                  if (fieldErrors.description)
+                    setFieldErrors((current) => ({
+                      ...current,
+                      description: undefined,
+                    }));
+                }}
                 placeholder="What is this project for?"
+                maxLength={VALIDATION_SETTINGS.projectDescription.max}
+                aria-invalid={Boolean(fieldErrors.description)}
               />
+              {fieldErrors.description && (
+                <p className="text-sm text-destructive">
+                  {fieldErrors.description}
+                </p>
+              )}
             </div>
             {formError && (
               <p className="text-sm text-destructive">{formError}</p>

@@ -111,6 +111,11 @@ export function WeeklyReportForm({
     return `This is a past reporting week (${weeks} week${weeks === 1 ? "" : "s"} ago). Managers will see it only when that week is selected.`;
   }, [values.weekStart]);
   const taskFields = useFieldArray({ control, name: "tasks" });
+  // Section-level issues (e.g. "at least one task") arrive on the array itself,
+  // either directly or nested under `root` depending on the resolver version.
+  const tasksArrayError =
+    (errors.tasks as { root?: { message?: string } } | undefined)?.root?.message ??
+    (errors.tasks as { message?: string } | undefined)?.message;
   const nextWeekFields = useFieldArray({ control, name: "nextWeekTasks" });
   const blockerFields = useFieldArray({ control, name: "blockers" });
   const achievementFields = useFieldArray({ control, name: "achievements" });
@@ -125,7 +130,7 @@ export function WeeklyReportForm({
       await handleSubmit((data) =>
         onSave({
           ...data,
-          projectId: data.projectId || null,
+          projectId: data.projectId,
           nextWeekTasks: data.nextWeekTasks.map((task, sortOrder) => ({
             ...task,
             sortOrder,
@@ -163,6 +168,7 @@ export function WeeklyReportForm({
             <div className="grid gap-4 md:grid-cols-3">
             <Field
               label="Project"
+              required
               controlId="report-project"
               error={errors.projectId?.message}
             >
@@ -173,7 +179,7 @@ export function WeeklyReportForm({
                 selectedLabel={initialReport?.project?.name}
                 emptyLabel="No project selected"
                 onChange={(value) =>
-                  setValue("projectId", value || null, { shouldValidate: true })
+                  setValue("projectId", value || "", { shouldValidate: true })
                 }
               />
             </Field>
@@ -229,7 +235,10 @@ export function WeeklyReportForm({
           }
         >
           {taskFields.fields.length === 0 ? (
-            <EmptyRow text="No tasks added yet." />
+            <EmptyRow
+              isError={Boolean(tasksArrayError)}
+              text={tasksArrayError || "No tasks added yet. At least one task is required."}
+            />
           ) : (
             taskFields.fields.map((field, index) => (
               <div
@@ -688,16 +697,24 @@ function Field({
   className,
   children,
   controlId,
+  required,
 }: {
   label: string;
   error?: string;
   className?: string;
   children: React.ReactNode;
   controlId?: string;
+  required?: boolean;
 }) {
   return (
     <div className={`space-y-2 ${className || ""}`}>
-      <Label htmlFor={controlId}>{label}</Label>
+      <div className="flex items-baseline gap-1">
+        <Label htmlFor={controlId}>{label}</Label>
+        {/* Kept outside the label so the accessible name stays unchanged. */}
+        {required && (
+          <span aria-hidden="true" className="text-destructive">*</span>
+        )}
+      </div>
       {children}
       {error && <p className="text-sm text-destructive">{error}</p>}
     </div>
@@ -766,9 +783,16 @@ function Section({
     </Card>
   );
 }
-function EmptyRow({ text }: { text: string }) {
+function EmptyRow({ text, isError }: { text: string; isError?: boolean }) {
   return (
-    <p className="rounded-lg border border-dashed border-slate-300 bg-slate-50 p-4 text-sm text-muted-foreground">
+    <p
+      role={isError ? "alert" : undefined}
+      className={`rounded-lg border border-dashed p-4 text-sm ${
+        isError
+          ? "border-destructive/50 bg-destructive/5 text-destructive"
+          : "border-slate-300 bg-slate-50 text-muted-foreground"
+      }`}
+    >
       {text}
     </p>
   );

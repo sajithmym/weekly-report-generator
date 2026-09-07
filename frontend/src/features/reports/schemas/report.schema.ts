@@ -97,16 +97,19 @@ const workHourSchema = z.object({
 export const reportFormSchema = z
   .object({
     projectId: z
-      .union([z.string().uuid("Select a valid project"), z.literal("")])
-      .nullable()
-      .optional(),
+      .string()
+      .min(1, "Select a project")
+      .uuid("Select a valid project"),
     weekStart: reportingDateSchema,
     weekEnd: reportingDateSchema,
     notes: z.string().max(VALIDATION_SETTINGS.reportNotes.max).optional(),
     tasks: z
       .array(taskSchema)
-      .max(REPORT_SETTINGS.maxItemsPerSection)
-      .default([]),
+      .min(
+        REPORT_SETTINGS.minTasksForSubmission,
+        "Add at least one task before saving",
+      )
+      .max(REPORT_SETTINGS.maxItemsPerSection),
     nextWeekTasks: z
       .array(nextWeekTaskSchema)
       .max(REPORT_SETTINGS.maxItemsPerSection)
