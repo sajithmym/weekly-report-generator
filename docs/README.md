@@ -5,6 +5,7 @@ This directory documents the Weekly Report Generator as implemented in this repo
 ## Start here
 
 - [Project reference](PROJECT_REFERENCE.md) — architecture, roles, routes, database, configuration, security, tests, and releases.
+- [Security architecture and control catalogue](SECURITY.md) — control-by-control protection model, enforcement points, verification, and production checklist.
 - [Local setup](../SETUP.md) — installation, environment variables, bootstrap, and checks.
 - [Requirements](01-requirements-and-scope.md), [architecture](02-system-architecture.md), and [testing](15-testing.md) — the main technical entry points.
 - [Project guides](weekly-report-guides/README.md) — implementation topics in project order.
