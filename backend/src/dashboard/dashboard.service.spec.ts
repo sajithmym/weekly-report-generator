@@ -185,6 +185,31 @@ describe("DashboardService", () => {
     }
   });
 
+  it("treats a report submitted exactly at the deadline as on time", async () => {
+    const { service, prisma } = createService();
+    prisma.user.findMany.mockResolvedValue([{ id: "member-a", name: "Asha" }]);
+    const deadline = new Date("2026-09-07T00:00:00.000Z");
+    prisma.report.findMany.mockResolvedValue([
+      {
+        id: "submitted-on-time",
+        userId: "member-a",
+        weekStart,
+        status: "SUBMITTED",
+        submittedAt: deadline,
+        versions: [{ submittedAt: deadline }],
+      },
+    ]);
+
+    await expect(
+      service.getRoster({
+        page: 1,
+        limit: 20,
+        weekStart: "2026-08-31",
+        weekEnd: "2026-09-06",
+      }),
+    ).resolves.toMatchObject({ data: [expect.objectContaining({ late: false })] });
+  });
+
   it("calculates summary and status distribution from roster rows and non-draft blockers", async () => {
     const { service, prisma } = createService();
     prisma.user.findMany.mockResolvedValue([

@@ -1,4 +1,5 @@
-import { NotFoundException } from "@nestjs/common";
+import { ConflictException, NotFoundException } from "@nestjs/common";
+import { Prisma } from "@prisma/client";
 import { UserRole } from "../common/enums";
 import { UsersService } from "./users.service";
 
@@ -73,6 +74,24 @@ describe("UsersService", () => {
       }),
     );
     expect(prisma.user.create.mock.calls[0][0].select.passwordHash).toBeUndefined();
+  });
+
+  it("returns a conflict instead of an internal error for a duplicate email", async () => {
+    const { service, prisma } = createService();
+    prisma.user.create.mockRejectedValue(
+      new Prisma.PrismaClientKnownRequestError("duplicate", {
+        code: "P2002",
+        clientVersion: "test",
+      }),
+    );
+
+    await expect(
+      service.create({
+        name: "Existing User",
+        email: "existing@example.com",
+        password: "password123",
+      }),
+    ).rejects.toBeInstanceOf(ConflictException);
   });
 
   it("returns a user by id and rejects a missing user", async () => {

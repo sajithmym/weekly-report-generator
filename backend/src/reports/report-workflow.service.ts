@@ -70,6 +70,8 @@ export class ReportWorkflowService {
         throw new BadRequestException(
           REPORT_SETTINGS.messages.projectRequiredForSubmission,
         );
+      if (!report.project?.isActive)
+        throw new BadRequestException(REPORT_SETTINGS.messages.inactiveProject);
       if (report.tasks.some((task) => !task.taskName.trim()))
         throw new BadRequestException(REPORT_SETTINGS.messages.blankTaskName);
 
@@ -108,7 +110,8 @@ export class ReportWorkflowService {
    * Manager requests changes (SUBMITTED → NEEDS_CORRECTION)
    */
   async requestChanges(reportId: string, reviewerId: string, comment: string) {
-    if (!comment || comment.trim().length === 0) {
+    const normalizedComment = comment?.trim();
+    if (!normalizedComment) {
       throw new BadRequestException(REPORT_SETTINGS.messages.commentRequired);
     }
 
@@ -145,7 +148,7 @@ export class ReportWorkflowService {
           reportVersionId: version.id,
           reviewerId,
           action: ReviewAction.CHANGES_REQUESTED,
-          comment,
+          comment: normalizedComment,
         },
       });
 

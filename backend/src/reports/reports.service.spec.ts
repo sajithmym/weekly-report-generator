@@ -248,6 +248,26 @@ describe("ReportsService", () => {
     ).rejects.toThrow("Week end must be after or equal to week start");
   });
 
+  it("builds a one-sided manager date filter without undefined bounds", async () => {
+    const { service, prisma } = createService();
+    prisma.report.findMany.mockResolvedValue([]);
+    prisma.report.count.mockResolvedValue(0);
+
+    await service.findByFilters({
+      page: 1,
+      limit: 20,
+      weekEnd: dates.weekEnd,
+    });
+
+    expect(prisma.report.findMany).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: expect.objectContaining({
+          weekStart: { lte: new Date("2026-09-06T23:59:59.999Z") },
+        }),
+      }),
+    );
+  });
+
   it("locks a report before checking ownership and editability", async () => {
     const { service, transaction } = createService();
     transaction.report.findUnique

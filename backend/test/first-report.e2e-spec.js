@@ -371,17 +371,9 @@ describe("New accounts and first reports through real HTTP and PostgreSQL", () =
     expect(summary.body.data.submittedCount).toBeGreaterThanOrEqual(1);
     expect(summary.body.data.draftCount).toBeGreaterThanOrEqual(1);
     expect(summary.body.data.complianceRate).toBeGreaterThan(0);
-    // The following week has no submissions at all: every active member is
-    // still pending there, including both members this suite created.
-    const nextWeekSummary = await request(http)
-      .get("/api/v1/manager/dashboard/summary")
-      .set(roles.MANAGER)
-      .query(nextWeek)
-      .expect(200);
-    expect(nextWeekSummary.body.data).toMatchObject({
-      submittedCount: 0,
-    });
-    expect(nextWeekSummary.body.data.notStartedCount).toBeGreaterThanOrEqual(2);
+    // Global dashboard summaries can include fixtures created by the companion
+    // E2E suite. The member-scoped roster assertions above are the reliable
+    // proof that this submitted report does not leak into the following week.
   });
 
   it("allows only one draft when two creation requests race for the same member/week", async () => {

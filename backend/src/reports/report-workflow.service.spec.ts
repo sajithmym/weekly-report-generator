@@ -16,7 +16,7 @@ describe("ReportWorkflowService", () => {
     blockers: [],
     achievements: [],
     workHours: [],
-    project: { id: "project-1", name: "Client Portal" },
+    project: { id: "project-1", name: "Client Portal", isActive: true },
     ...overrides,
   });
 
@@ -102,6 +102,11 @@ describe("ReportWorkflowService", () => {
     [report({ tasks: [] }), "member-1", "Add at least one named task before submitting."],
     [report({ projectId: null }), "member-1", "Select a project before submitting."],
     [
+      report({ project: { id: "project-1", name: "Archived", isActive: false } }),
+      "member-1",
+      "Project is deactivated and cannot be used",
+    ],
+    [
       report({ tasks: [{ taskName: "   ", status: "DONE" }] }),
       "member-1",
       "Task names cannot be blank.",
@@ -148,6 +153,24 @@ describe("ReportWorkflowService", () => {
         action: ReviewAction.CHANGES_REQUESTED,
         comment: "Please add detail.",
       },
+    });
+  });
+
+  it("trims correction comments before preserving them in review history", async () => {
+    const { service, transaction } = createService();
+    transaction.report.findUnique.mockResolvedValue(
+      report({ status: ReportStatus.SUBMITTED, latestVersionNumber: 1 }),
+    );
+    transaction.reportVersion.findFirst.mockResolvedValue({ id: "version-1" });
+    transaction.report.updateMany.mockResolvedValue({ count: 1 });
+    transaction.report.findUniqueOrThrow.mockResolvedValue(
+      report({ status: ReportStatus.NEEDS_CORRECTION, latestVersionNumber: 1 }),
+    );
+
+    await service.requestChanges("report-1", "manager-1", "  Add the outcome.  ");
+
+    expect(transaction.review.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ comment: "Add the outcome." }),
     });
   });
 

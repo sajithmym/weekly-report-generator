@@ -66,7 +66,7 @@ export class DashboardService {
         const submitted =
           report !== undefined && report.status !== ReportStatus.DRAFT;
         const late = submitted
-          ? Boolean(submittedAt && submittedAt >= deadline)
+          ? Boolean(submittedAt && submittedAt > deadline)
           : new Date() >= deadline;
         return {
           userId: member.id,

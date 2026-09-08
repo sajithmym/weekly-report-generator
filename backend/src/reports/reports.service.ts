@@ -366,8 +366,12 @@ export class ReportsService {
     if (filterWeekStart && filterWeekEnd && filterWeekEnd < filterWeekStart) {
       throw new BadRequestException(REPORT_SETTINGS.messages.invalidWeekRange);
     }
-    if (filterWeekStart || filterWeekEnd)
-      where.weekStart = { gte: filterWeekStart, lte: filterWeekEnd };
+    if (filterWeekStart || filterWeekEnd) {
+      where.weekStart = {
+        ...(filterWeekStart ? { gte: filterWeekStart } : {}),
+        ...(filterWeekEnd ? { lte: filterWeekEnd } : {}),
+      };
+    }
 
     const [reports, total] = await Promise.all([
       this.prisma.report.findMany({

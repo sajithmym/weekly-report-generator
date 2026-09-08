@@ -1,5 +1,6 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { ConflictException, Injectable, NotFoundException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../database/prisma.service';
 import { PaginatedResponse } from '../common/dto';
 import { UserRole } from '../common/enums';
@@ -52,22 +53,32 @@ export class UsersService {
 
   async create(dto: CreateUserDto) {
     const passwordHash = await bcrypt.hash(dto.password, AUTH_SETTINGS.passwordHashRounds);
-    return this.prisma.user.create({
-      data: {
-        name: dto.name.trim(),
-        email: dto.email.trim().toLowerCase(),
-        passwordHash,
-        role: dto.role || USER_SETTINGS.defaultRole,
-      },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-        isActive: true,
-        createdAt: true,
-      },
-    });
+    try {
+      return await this.prisma.user.create({
+        data: {
+          name: dto.name.trim(),
+          email: dto.email.trim().toLowerCase(),
+          passwordHash,
+          role: dto.role || USER_SETTINGS.defaultRole,
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isActive: true,
+          createdAt: true,
+        },
+      });
+    } catch (error) {
+      if (
+        error instanceof Prisma.PrismaClientKnownRequestError &&
+        error.code === 'P2002'
+      ) {
+        throw new ConflictException(AUTH_SETTINGS.messages.emailAlreadyRegistered);
+      }
+      throw error;
+    }
   }
 
   async findById(id: string) {
