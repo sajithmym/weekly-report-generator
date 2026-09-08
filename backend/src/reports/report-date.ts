@@ -23,6 +23,12 @@ export function validateReportWeek(start: Date, end: Date) {
       REPORT_SETTINGS.messages.invalidReportingWeek,
     );
   }
+
+  if (start > weekOf()) {
+    throw new BadRequestException(
+      REPORT_SETTINGS.messages.futureReportingWeek,
+    );
+  }
 }
 
 export function selectedWeeks(start?: string, end?: string) {

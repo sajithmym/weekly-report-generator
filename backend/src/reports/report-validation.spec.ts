@@ -77,6 +77,12 @@ describe("Report input and reporting calendar", () => {
     expect(() =>
       validateReportWeek(new Date("2026-09-01"), new Date("2026-09-07")),
     ).toThrow();
+    const currentWeek = weekOf();
+    const futureWeek = new Date(currentWeek.getTime() + 7 * 86_400_000);
+    const futureWeekEnd = new Date(futureWeek.getTime() + 6 * 86_400_000);
+    expect(() => validateReportWeek(futureWeek, futureWeekEnd)).toThrow(
+      "Reports cannot be created for a future reporting week.",
+    );
     expect(() => selectedWeeks("2026-09-07", "2026-08-31")).toThrow();
     expect(() => selectedWeeks("2025-01-01", "2026-09-01")).toThrow();
   });

@@ -549,16 +549,16 @@ describe("New accounts and first reports through real HTTP and PostgreSQL", () =
       .delete(`/api/v1/projects/${project.id}`)
       .set(roles.MANAGER)
       .expect(200);
-    const future = {
-      weekStart: "2026-09-14",
-      weekEnd: "2026-09-20",
-      tasks: [{ taskName: "Future work" }],
+    const unavailableProjectReport = {
+      weekStart: "2026-08-24",
+      weekEnd: "2026-08-30",
+      tasks: [{ taskName: "Project validation work" }],
     };
     await memberRequest("post", "/reports")
-      .send({ ...future, projectId: project.id })
+      .send({ ...unavailableProjectReport, projectId: project.id })
       .expect(400);
     await memberRequest("post", "/reports")
-      .send({ ...future, projectId: randomUUID() })
+      .send({ ...unavailableProjectReport, projectId: randomUUID() })
       .expect(404);
     await request(http)
       .patch(`/api/v1/users/${member.id}/status`)
@@ -566,7 +566,9 @@ describe("New accounts and first reports through real HTTP and PostgreSQL", () =
       .send({ isActive: false })
       .expect(200);
     await memberRequest("get", "/reports/my").expect(401);
-    await memberRequest("post", "/reports").send(future).expect(401);
+    await memberRequest("post", "/reports")
+      .send(unavailableProjectReport)
+      .expect(401);
     await request(http)
       .post("/api/v1/auth/refresh")
       .set("Cookie", memberCookie)

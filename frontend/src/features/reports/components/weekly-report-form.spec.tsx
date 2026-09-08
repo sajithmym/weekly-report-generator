@@ -10,6 +10,10 @@ import { describe, expect, it, vi } from "vitest";
 import { WeeklyReportForm } from "./weekly-report-form";
 import type { Report } from "@/types";
 
+const datePickerState = vi.hoisted(() => ({
+  disabledDates: undefined as undefined | ((date: Date) => boolean),
+}));
+
 vi.mock("@/components/shared/entity-picker", () => ({
   EntityPicker: ({
     value,
@@ -36,18 +40,23 @@ vi.mock("@/components/ui/date-picker", () => ({
   DatePicker: ({
     onChange,
     id,
+    disabledDates,
   }: {
-    onChange: (date?: Date) => void;
+    onChange: (date?: string) => void;
     id?: string;
-  }) => (
-    <button
-      id={id}
-      type="button"
-      onClick={() => onChange(new Date("2026-09-06T12:00:00"))}
-    >
-      Choose reporting week
-    </button>
-  ),
+    disabledDates?: (date: Date) => boolean;
+  }) => {
+    datePickerState.disabledDates = disabledDates;
+    return (
+      <button
+        id={id}
+        type="button"
+        onClick={() => onChange("2026-09-06")}
+      >
+        Choose reporting week
+      </button>
+    );
+  },
 }));
 
 describe("WeeklyReportForm", () => {
@@ -86,6 +95,21 @@ describe("WeeklyReportForm", () => {
     expect(
       screen.getByText(/This is the current reporting week/i),
     ).toBeInTheDocument();
+  });
+
+  it("enables only Mondays in the current or a past reporting week", () => {
+    vi.useFakeTimers();
+    try {
+      vi.setSystemTime(new Date("2026-09-08T12:00:00Z"));
+      renderForm();
+      const isDisabled = datePickerState.disabledDates;
+
+      expect(isDisabled?.(new Date(2026, 8, 7))).toBe(false);
+      expect(isDisabled?.(new Date(2026, 8, 8))).toBe(true);
+      expect(isDisabled?.(new Date(2026, 8, 14))).toBe(true);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("flags a past reporting week as visible only when that week is selected", () => {

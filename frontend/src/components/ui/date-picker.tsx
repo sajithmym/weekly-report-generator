@@ -6,6 +6,7 @@ import { CalendarDays } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import type { CalendarProps } from "@/components/ui/calendar";
 import {
   Popover,
   PopoverContent,
@@ -17,6 +18,7 @@ interface DatePickerProps {
   onChange?: (date: string | undefined) => void;
   placeholder?: string;
   disabled?: boolean;
+  disabledDates?: CalendarProps["disabled"];
   className?: string;
   id?: string;
 }
@@ -26,6 +28,7 @@ export function DatePicker({
   onChange,
   placeholder = "Pick a date",
   disabled = false,
+  disabledDates,
   className,
   id,
 }: DatePickerProps) {
@@ -85,6 +88,7 @@ export function DatePicker({
           mode="single"
           selected={selectedDate}
           onSelect={handleSelect}
+          disabled={disabledDates}
           footer={
             <div className="mx-1 mt-2 border-t border-border/70 px-1 pt-3 text-xs font-medium text-muted-foreground">
               {selectedDate

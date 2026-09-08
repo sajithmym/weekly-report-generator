@@ -155,6 +155,12 @@ export const reportFormSchema = z
           path: ["weekEnd"],
           message: "Reporting weeks must end on the following Sunday",
         });
+      if (data.weekStart > reportWeek().weekStart)
+        context.addIssue({
+          code: z.ZodIssueCode.custom,
+          path: ["weekStart"],
+          message: "Reports cannot be created for a future reporting week",
+        });
     }
     if (data.blockers.filter((blocker) => blocker.isKeyIssue).length > 1)
       context.addIssue({

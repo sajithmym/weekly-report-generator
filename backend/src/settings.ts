@@ -167,6 +167,7 @@ export const REPORT_SETTINGS = {
     invalidReportingDate: "Invalid reporting date.",
     invalidReportingWeek:
       "Reports must cover Monday through Sunday using date-only values.",
+    futureReportingWeek: "Reports cannot be created for a future reporting week.",
     reportingRangeTooLarge:
       "Choose an ordered reporting range of at most 52 weeks.",
     projectNotFound: "Project not found",

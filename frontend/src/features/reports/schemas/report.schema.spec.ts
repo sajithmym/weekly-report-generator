@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { reportFormSchema } from "./report.schema";
+import { reportWeek } from "@/lib/report-week";
 
 const projectId = "11111111-1111-4111-8111-111111111111";
 const week = {
@@ -22,12 +23,28 @@ describe("weekly report form schema", () => {
   });
 
   it.each([
-    { weekStart: "2026-12-28", weekEnd: "2027-01-03" },
+    { weekStart: "2025-12-29", weekEnd: "2026-01-04" },
     { weekStart: "2024-02-26", weekEnd: "2024-03-03" },
   ])("accepts valid year and leap-year boundaries: %j", (range) => {
     expect(reportFormSchema.safeParse({ ...week, ...range }).success).toBe(
       true,
     );
+  });
+
+  it("rejects a future reporting week", () => {
+    const currentWeek = reportWeek();
+    const nextMonday = new Date(`${currentWeek.weekStart}T00:00:00Z`);
+    nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
+    const nextSunday = new Date(nextMonday);
+    nextSunday.setUTCDate(nextSunday.getUTCDate() + 6);
+
+    expect(
+      reportFormSchema.safeParse({
+        ...week,
+        weekStart: nextMonday.toISOString().slice(0, 10),
+        weekEnd: nextSunday.toISOString().slice(0, 10),
+      }).success,
+    ).toBe(false);
   });
 
   it("allows incomplete drafts but rejects malformed project references", () => {

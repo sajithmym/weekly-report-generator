@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, type FormEvent } from "react";
+import { useCallback, useEffect, useMemo, useRef, type FormEvent } from "react";
 import {
   useFieldArray,
   useForm,
@@ -60,6 +60,13 @@ const createDefaultValues = (): ReportFormData => ({
   workHours: [],
 });
 
+const localDateValue = (date: Date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
 export function WeeklyReportForm({
   initialReport,
   submitLabel,
@@ -95,21 +102,24 @@ export function WeeklyReportForm({
     if (initialReport && !isDirty) reset(reportToFormData(initialReport));
   }, [initialReport, isDirty, reset]);
   const values = useWatch({ control });
+  const latestReportWeekStart = useMemo(() => reportWeek().weekStart, []);
+  const isUnavailableReportDate = useCallback(
+    (date: Date) =>
+      date.getDay() !== 1 || localDateValue(date) > latestReportWeekStart,
+    [latestReportWeekStart],
+  );
   const weekContext = useMemo(() => {
-    const todayWeek = reportWeek();
     const start = values.weekStart ? new Date(`${values.weekStart}T00:00:00Z`) : null;
     if (!start || Number.isNaN(start.getTime())) return null;
     const days = Math.round(
-      (start.getTime() - new Date(`${todayWeek.weekStart}T00:00:00Z`).getTime()) /
+      (start.getTime() - new Date(`${latestReportWeekStart}T00:00:00Z`).getTime()) /
         (REPORT_SETTINGS.calendar.millisecondsPerDay * 7),
     );
     if (days === 0)
       return "This is the current reporting week (Monday–Sunday, UTC).";
-    if (days > 0)
-      return `This is a future reporting week (${days} week${days === 1 ? "" : "s"} ahead). Managers will see it only when that week is selected.`;
     const weeks = Math.abs(days);
     return `This is a past reporting week (${weeks} week${weeks === 1 ? "" : "s"} ago). Managers will see it only when that week is selected.`;
-  }, [values.weekStart]);
+  }, [latestReportWeekStart, values.weekStart]);
   const taskFields = useFieldArray({ control, name: "tasks" });
   // Section-level issues (e.g. "at least one task") arrive on the array itself,
   // either directly or nested under `root` depending on the resolver version.
@@ -190,9 +200,11 @@ export function WeeklyReportForm({
               <DatePicker
                 id="report-week-start"
                 value={values.weekStart}
+                disabledDates={isUnavailableReportDate}
                 onChange={(date) => {
                   if (date) {
                     const week = reportWeek(date);
+                    if (week.weekStart > latestReportWeekStart) return;
                     setValue("weekStart", week.weekStart, {
                       shouldValidate: true,
                     });
