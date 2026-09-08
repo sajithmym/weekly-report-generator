@@ -202,17 +202,16 @@ describe("WeeklyReportForm", () => {
     expect(screen.getByRole("button", { name: "Project" })).toBeDisabled();
   });
 
-  it("blocks saving until a project and at least one task are provided", async () => {
+  it("saves an incomplete draft", async () => {
     const user = userEvent.setup();
     const { onSave } = renderForm();
 
     await user.click(screen.getByRole("button", { name: "Save draft" }));
 
-    expect(onSave).not.toHaveBeenCalled();
-    expect(await screen.findByText("Select a project")).toBeInTheDocument();
-    expect(
-      screen.getByText(/Add at least one task before saving/i),
-    ).toBeInTheDocument();
+    await waitFor(() => expect(onSave).toHaveBeenCalledOnce());
+    expect(onSave).toHaveBeenCalledWith(
+      expect.objectContaining({ projectId: undefined, tasks: [] }),
+    );
   });
 
   it("prevents repeated form submissions and preserves inputs when a save fails", async () => {

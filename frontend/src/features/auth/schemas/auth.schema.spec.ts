@@ -8,6 +8,20 @@ describe("authentication form schemas", () => {
     ).toEqual({ email: "member@example.com", password: "password123" });
   });
 
+  it("normalizes email addresses and names before sending them to the API", () => {
+    expect(
+      loginSchema.parse({ email: " MEMBER@EXAMPLE.COM ", password: "password123" }),
+    ).toEqual({ email: "member@example.com", password: "password123" });
+    expect(
+      registerSchema.parse({
+        name: "  Asha Perera  ",
+        email: " ASHA@EXAMPLE.COM ",
+        password: "password123",
+        confirmPassword: "password123",
+      }),
+    ).toMatchObject({ name: "Asha Perera", email: "asha@example.com" });
+  });
+
   it.each([
     [{ email: "not-an-email", password: "password123" }, "Invalid email address"],
     [{ email: "member@example.com", password: "short" }, "Password must be at least 8 characters"],
@@ -60,5 +74,16 @@ describe("authentication form schemas", () => {
         ]),
       );
     }
+  });
+
+  it("rejects a whitespace-only registration name", () => {
+    expect(
+      registerSchema.safeParse({
+        name: "  ",
+        email: "asha@example.com",
+        password: "password123",
+        confirmPassword: "password123",
+      }).success,
+    ).toBe(false);
   });
 });

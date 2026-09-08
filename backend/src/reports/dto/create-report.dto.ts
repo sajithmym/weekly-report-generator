@@ -11,7 +11,6 @@ import {
   IsBoolean,
   IsUUID,
   ArrayMaxSize,
-  ArrayMinSize,
   ValidateIf,
   MinLength,
   Matches,
@@ -61,6 +60,9 @@ class CreateTaskDto {
   actualMinutes?: number;
 
   @ValidateIf((_object, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" ? value.trim() : value,
+  )
   @IsString()
   @MaxLength(VALIDATION_SETTINGS.deliverable.max)
   deliverable?: string;
@@ -124,8 +126,9 @@ class CreateWorkHourDto {
 }
 
 export class CreateReportDto {
+  @ValidateIf((_object, value) => value !== undefined)
   @IsUUID()
-  projectId: string;
+  projectId?: string | null;
 
   @Matches(VALIDATION_SETTINGS.datePattern)
   @IsDateString({ strict: true })
@@ -136,16 +139,19 @@ export class CreateReportDto {
   weekEnd: string;
 
   @ValidateIf((_object, value) => value !== undefined)
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === "string" ? value.trim() : value,
+  )
   @IsString()
   @MaxLength(VALIDATION_SETTINGS.reportNotes.max)
   notes?: string;
 
+  @ValidateIf((_object, value) => value !== undefined)
   @IsArray()
-  @ArrayMinSize(REPORT_SETTINGS.minTasksForSubmission)
   @ArrayMaxSize(REPORT_SETTINGS.maxItemsPerSection)
   @ValidateNested({ each: true })
   @Type(() => CreateTaskDto)
-  tasks: CreateTaskDto[];
+  tasks?: CreateTaskDto[];
 
   @ValidateIf((_object, value) => value !== undefined)
   @IsArray()

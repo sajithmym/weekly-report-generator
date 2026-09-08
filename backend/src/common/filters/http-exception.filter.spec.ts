@@ -95,4 +95,25 @@ describe("GlobalExceptionFilter", () => {
       logger.mockRestore();
     }
   });
+
+  it("does not write query-string values to unexpected-error logs", () => {
+    const { host } = createHost();
+    const logger = jest.spyOn(Logger.prototype, "error").mockImplementation();
+    try {
+      const request = host.switchToHttp().getRequest();
+      request.url = "/api/v1/reports?accessToken=private-value";
+      new GlobalExceptionFilter().catch(new Error("database connection lost"), host as never);
+
+      expect(logger).toHaveBeenCalledWith(
+        expect.stringContaining("[POST] /api/v1/reports → 500 INTERNAL_ERROR"),
+        expect.any(String),
+      );
+      expect(logger).not.toHaveBeenCalledWith(
+        expect.stringContaining("private-value"),
+        expect.anything(),
+      );
+    } finally {
+      logger.mockRestore();
+    }
+  });
 });

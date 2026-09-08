@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from "@nestjs/common";
 import { ReportStatus, UserRole } from "../common/enums";
-import { CreateReportDto } from "./dto";
 import { ReportsService } from "./reports.service";
 
 describe("ReportsService", () => {
@@ -86,24 +85,18 @@ describe("ReportsService", () => {
     );
   });
 
-  it("requires a project and at least one named task before creating", async () => {
+  it("creates an incomplete draft while leaving submission requirements to the workflow", async () => {
     const { service, prisma } = createService();
+    const created = { id: "report-1", status: ReportStatus.DRAFT };
+    prisma.report.findFirst.mockResolvedValue(null);
+    prisma.report.create.mockResolvedValue(created);
 
-    // Casts keep the invalid payloads intentional: these fields are required
-    // at the DTO layer, and this test covers the service-level safety net.
-    await expect(
-      service.create("member-1", {
-        ...dates,
-        tasks: [{ taskName: "Deliver feature" }],
-      } as CreateReportDto),
-    ).rejects.toThrow("Select a project before saving the report.");
-    await expect(
-      service.create(
-        "member-1",
-        { ...dates, projectId: "project-1" } as CreateReportDto,
-      ),
-    ).rejects.toThrow("Add at least one named task before submitting.");
-    expect(prisma.report.create).not.toHaveBeenCalled();
+    await expect(service.create("member-1", dates)).resolves.toBe(created);
+    expect(prisma.report.create).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: expect.objectContaining({ projectId: undefined, tasks: undefined }),
+      }),
+    );
   });
 
   it.each([

@@ -8,6 +8,7 @@ import {
   Body,
   Query,
   UseGuards,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto, UpdateProjectDto, ProjectFilterDto } from './dto';
@@ -34,7 +35,9 @@ export class ProjectsController {
   }
 
   @Get(':id')
-  async findById(@Param('id') id: string) {
+  async findById(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
     try {
       const data = await this.projectsService.findById(id);
       return ApiResponse.success(data, API_RESPONSE_MESSAGES.projects.projectFetched);
@@ -56,7 +59,10 @@ export class ProjectsController {
 
   @Patch(':id')
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  async update(@Param('id') id: string, @Body() dto: UpdateProjectDto) {
+  async update(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Body() dto: UpdateProjectDto,
+  ) {
     try {
       const data = await this.projectsService.update(id, dto);
       return ApiResponse.success(data, API_RESPONSE_MESSAGES.projects.updated);
@@ -67,7 +73,9 @@ export class ProjectsController {
 
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  async remove(@Param('id') id: string) {
+  async remove(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
     try {
       const data = await this.projectsService.remove(id);
       return ApiResponse.success(data, API_RESPONSE_MESSAGES.projects.deactivated);

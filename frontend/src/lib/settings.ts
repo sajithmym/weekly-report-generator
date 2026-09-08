@@ -169,7 +169,7 @@ export const REPORT_SETTINGS = {
   defaultWorkHourType: 'DEVELOPMENT',
   defaultNumericValue: 0,
   taskSectionTitle: 'Tasks and progress',
-  submissionGuidance: 'A project and at least one named task are required to save a report; unfinished tasks are allowed.',
+  submissionGuidance: 'Drafts may be incomplete. Select a project and add at least one named task before submitting for review.',
   minTasksForSubmission: 1,
   maxItemsPerSection: 50,
   taskPriorities: ['LOW', 'MEDIUM', 'HIGH', 'CRITICAL'] as const,

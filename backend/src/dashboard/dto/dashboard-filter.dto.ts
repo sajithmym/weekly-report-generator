@@ -7,22 +7,26 @@ import {
   Min,
   IsUUID,
   IsIn,
+  Matches,
 } from "class-validator";
 import { PaginationDto } from "../../common/dto";
-import { DASHBOARD_SETTINGS, PAGINATION_SETTINGS, REPORT_SETTINGS } from "../../settings";
+import { DASHBOARD_SETTINGS, PAGINATION_SETTINGS, REPORT_SETTINGS, VALIDATION_SETTINGS } from "../../settings";
 
 export class DashboardDateFilterDto {
   @IsOptional()
+  @Matches(VALIDATION_SETTINGS.datePattern)
   @IsDateString()
   weekStart?: string;
 
   @IsOptional()
+  @Matches(VALIDATION_SETTINGS.datePattern)
   @IsDateString()
   weekEnd?: string;
 }
 
 export class TaskTrendFilterDto {
   @IsOptional()
+  @Matches(VALIDATION_SETTINGS.datePattern)
   @IsDateString()
   weekEnd?: string;
   @IsOptional()
@@ -44,10 +48,12 @@ export class ActivityFilterDto extends DashboardDateFilterDto {
 
 export class RosterFilterDto extends PaginationDto {
   @IsOptional()
+  @Matches(VALIDATION_SETTINGS.datePattern)
   @IsDateString()
   weekStart?: string;
 
   @IsOptional()
+  @Matches(VALIDATION_SETTINGS.datePattern)
   @IsDateString()
   weekEnd?: string;
 

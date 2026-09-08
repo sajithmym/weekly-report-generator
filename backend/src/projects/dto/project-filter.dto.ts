@@ -12,7 +12,9 @@ export class ProjectFilterDto extends PaginationDto {
   @IsOptional()
   @Transform(({ value }) => {
     if (value === undefined || value === '') return undefined;
-    return value === true || value === 'true';
+    if (value === true || value === 'true') return true;
+    if (value === false || value === 'false') return false;
+    return value;
   })
   @IsBoolean()
   isActive?: boolean;

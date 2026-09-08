@@ -9,6 +9,7 @@ import {
   Req,
   UseGuards,
   ForbiddenException,
+  ParseUUIDPipe,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto, UpdateUserRoleDto, UpdateUserStatusDto, UserFilterDto } from './dto';
@@ -45,7 +46,9 @@ export class UsersController {
 
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.MANAGER)
-  async findById(@Param('id') id: string) {
+  async findById(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+  ) {
     try {
       const data = await this.usersService.findById(id);
       return ApiResponse.success(data, API_RESPONSE_MESSAGES.users.userFetched);
@@ -56,7 +59,11 @@ export class UsersController {
 
   @Patch(':id/role')
   @Roles(UserRole.ADMIN)
-  async updateRole(@Param('id') id: string, @Req() req: RequestWithUser, @Body() dto: UpdateUserRoleDto) {
+  async updateRole(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Req() req: RequestWithUser,
+    @Body() dto: UpdateUserRoleDto,
+  ) {
     try {
       if (id === req.user.sub) throw new ForbiddenException(USER_SETTINGS.messages.cannotChangeOwnRole);
       const data = await this.usersService.updateRole(id, dto.role);
@@ -68,7 +75,11 @@ export class UsersController {
 
   @Patch(':id/status')
   @Roles(UserRole.ADMIN)
-  async updateStatus(@Param('id') id: string, @Req() req: RequestWithUser, @Body() dto: UpdateUserStatusDto) {
+  async updateStatus(
+    @Param('id', new ParseUUIDPipe({ version: '4' })) id: string,
+    @Req() req: RequestWithUser,
+    @Body() dto: UpdateUserStatusDto,
+  ) {
     try {
       if (id === req.user.sub) throw new ForbiddenException(USER_SETTINGS.messages.cannotChangeOwnStatus);
       const data = await this.usersService.updateStatus(id, dto.isActive);

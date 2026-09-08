@@ -30,19 +30,17 @@ describe("weekly report form schema", () => {
     );
   });
 
-  it("requires a project and at least one named task before saving", () => {
+  it("allows incomplete drafts but rejects malformed project references", () => {
     expect(
-      reportFormSchema.safeParse({ ...week, projectId: "" }).success,
-    ).toBe(false);
+      reportFormSchema.safeParse({ ...week, projectId: "", tasks: [] }).success,
+    ).toBe(true);
     expect(
       reportFormSchema.safeParse({ ...week, projectId: null }).success,
     ).toBe(false);
     expect(
       reportFormSchema.safeParse({ ...week, projectId: "invalid" }).success,
     ).toBe(false);
-    expect(reportFormSchema.safeParse({ ...week, tasks: [] }).success).toBe(
-      false,
-    );
+    expect(reportFormSchema.safeParse({ ...week, tasks: [] }).success).toBe(true);
     expect(
       reportFormSchema.safeParse({
         ...week,
@@ -50,25 +48,9 @@ describe("weekly report form schema", () => {
       }).success,
     ).toBe(false);
 
-    const emptyProject = reportFormSchema.safeParse({ ...week, projectId: "" });
-    expect(emptyProject).toMatchObject({ success: false });
-    if (!emptyProject.success)
-      expect(emptyProject.error.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({ message: "Select a project" }),
-        ]),
-      );
-
-    const noTasks = reportFormSchema.safeParse({ ...week, tasks: [] });
-    expect(noTasks).toMatchObject({ success: false });
-    if (!noTasks.success)
-      expect(noTasks.error.issues).toEqual(
-        expect.arrayContaining([
-          expect.objectContaining({
-            message: "Add at least one task before saving",
-          }),
-        ]),
-      );
+    expect(
+      reportFormSchema.parse({ ...week, projectId: "", tasks: [] }).projectId,
+    ).toBeUndefined();
   });
 
   it("still validates key selections while requiring the project and task", () => {

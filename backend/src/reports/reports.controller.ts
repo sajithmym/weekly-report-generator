@@ -10,6 +10,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  ParseUUIDPipe,
 } from "@nestjs/common";
 import { ReportsService } from "./reports.service";
 import { ReportWorkflowService } from "./report-workflow.service";
@@ -79,7 +80,10 @@ export class ReportsController {
 
   @Get("reports/:id")
   @Roles(UserRole.TEAM_MEMBER)
-  async findById(@Param("id") id: string, @Req() req: RequestWithUser) {
+  async findById(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() req: RequestWithUser,
+  ) {
     try {
       const data = await this.reportsService.findById(
         id,
@@ -98,7 +102,7 @@ export class ReportsController {
   @Patch("reports/:id")
   @Roles(UserRole.TEAM_MEMBER)
   async update(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Req() req: RequestWithUser,
     @Body() dto: UpdateReportDto,
   ) {
@@ -113,7 +117,10 @@ export class ReportsController {
   @Post("reports/:id/submit")
   @Roles(UserRole.TEAM_MEMBER)
   @HttpCode(HttpStatus.OK)
-  async submit(@Param("id") id: string, @Req() req: RequestWithUser) {
+  async submit(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() req: RequestWithUser,
+  ) {
     try {
       const data = await this.workflowService.submit(id, req.user.sub);
       return ApiResponse.success(data, API_RESPONSE_MESSAGES.reports.submitted);
@@ -125,7 +132,7 @@ export class ReportsController {
   @Get("reports/:id/versions")
   @Roles(UserRole.TEAM_MEMBER)
   async getVersionHistory(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Req() req: RequestWithUser,
   ) {
     try {
@@ -160,7 +167,7 @@ export class ReportsController {
   @Get("manager/reports/:id")
   @Roles(UserRole.MANAGER, UserRole.ADMIN)
   async findTeamReportById(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Req() req: RequestWithUser,
   ) {
     try {
@@ -182,7 +189,7 @@ export class ReportsController {
   @Roles(UserRole.MANAGER, UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
   async requestChanges(
-    @Param("id") id: string,
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
     @Req() req: RequestWithUser,
     @Body() dto: RequestChangesDto,
   ) {
@@ -204,7 +211,10 @@ export class ReportsController {
   @Post("manager/reports/:id/approve")
   @Roles(UserRole.MANAGER, UserRole.ADMIN)
   @HttpCode(HttpStatus.OK)
-  async approve(@Param("id") id: string, @Req() req: RequestWithUser) {
+  async approve(
+    @Param("id", new ParseUUIDPipe({ version: "4" })) id: string,
+    @Req() req: RequestWithUser,
+  ) {
     try {
       const data = await this.workflowService.approve(id, req.user.sub);
       return ApiResponse.success(data, API_RESPONSE_MESSAGES.reports.approved);

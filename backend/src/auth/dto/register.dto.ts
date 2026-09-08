@@ -11,6 +11,9 @@ export class RegisterDto {
   @MaxLength(VALIDATION_SETTINGS.name.max)
   name: string;
 
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' ? value.trim().toLowerCase() : value,
+  )
   @IsEmail()
   email: string;
 

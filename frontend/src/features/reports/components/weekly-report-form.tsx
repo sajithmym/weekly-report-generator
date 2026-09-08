@@ -50,7 +50,7 @@ type WeeklyReportFormProps = {
 };
 
 const createDefaultValues = (): ReportFormData => ({
-  projectId: "",
+  projectId: undefined,
   ...reportWeek(),
   notes: "",
   tasks: [],
@@ -168,7 +168,6 @@ export function WeeklyReportForm({
             <div className="grid gap-4 md:grid-cols-3">
             <Field
               label="Project"
-              required
               controlId="report-project"
               error={errors.projectId?.message}
             >
@@ -179,7 +178,7 @@ export function WeeklyReportForm({
                 selectedLabel={initialReport?.project?.name}
                 emptyLabel="No project selected"
                 onChange={(value) =>
-                  setValue("projectId", value || "", { shouldValidate: true })
+                  setValue("projectId", value || undefined, { shouldValidate: true })
                 }
               />
             </Field>
@@ -237,7 +236,7 @@ export function WeeklyReportForm({
           {taskFields.fields.length === 0 ? (
             <EmptyRow
               isError={Boolean(tasksArrayError)}
-              text={tasksArrayError || "No tasks added yet. At least one task is required."}
+              text={tasksArrayError || "No tasks added yet."}
             />
           ) : (
             taskFields.fields.map((field, index) => (
@@ -643,7 +642,7 @@ export function WeeklyReportForm({
 
 function reportToFormData(report: Report): ReportFormData {
   return {
-    projectId: report.projectId || "",
+    projectId: report.projectId || undefined,
     weekStart: report.weekStart.slice(0, 10),
     weekEnd: report.weekEnd.slice(0, 10),
     notes: report.notes || "",

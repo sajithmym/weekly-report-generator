@@ -14,6 +14,11 @@ const reportingDateSchema = z
     );
   }, "Enter a valid date using YYYY-MM-DD");
 
+const optionalProjectIdSchema = z.preprocess(
+  (value) => (typeof value === "string" && value.trim() === "" ? undefined : value),
+  z.string().trim().uuid("Select a valid project").optional(),
+);
+
 const taskSchema = z.object({
   taskName: z
     .string()
@@ -96,19 +101,12 @@ const workHourSchema = z.object({
 
 export const reportFormSchema = z
   .object({
-    projectId: z
-      .string()
-      .min(1, "Select a project")
-      .uuid("Select a valid project"),
+    projectId: optionalProjectIdSchema,
     weekStart: reportingDateSchema,
     weekEnd: reportingDateSchema,
     notes: z.string().max(VALIDATION_SETTINGS.reportNotes.max).optional(),
     tasks: z
       .array(taskSchema)
-      .min(
-        REPORT_SETTINGS.minTasksForSubmission,
-        "Add at least one task before saving",
-      )
       .max(REPORT_SETTINGS.maxItemsPerSection),
     nextWeekTasks: z
       .array(nextWeekTaskSchema)

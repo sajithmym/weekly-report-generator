@@ -235,9 +235,13 @@ describe("HTTP authorization, reports, and dashboard with an isolated PostgreSQL
       .set(auth("manager"))
       .expect(200);
     await request(http)
-      .get("/api/v1/users/missing-user")
+      .get("/api/v1/users/11111111-1111-4111-8111-111111111111")
       .set(auth("manager"))
       .expect(404);
+    await request(http)
+      .get("/api/v1/users/missing-user")
+      .set(auth("manager"))
+      .expect(400);
     await request(http)
       .patch(`/api/v1/users/${admin.id}/role`)
       .set(auth("admin"))

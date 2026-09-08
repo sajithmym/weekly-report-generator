@@ -2,13 +2,13 @@ import { z } from "zod";
 import { VALIDATION_SETTINGS } from "@/lib/settings";
 
 export const loginSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.string().trim().toLowerCase().email("Invalid email address"),
   password: z.string().min(VALIDATION_SETTINGS.password.min, `Password must be at least ${VALIDATION_SETTINGS.password.min} characters`),
 });
 
 export const registerSchema = z.object({
-  name: z.string().min(VALIDATION_SETTINGS.name.min, `Name must be at least ${VALIDATION_SETTINGS.name.min} characters`).max(VALIDATION_SETTINGS.name.max),
-  email: z.string().email("Invalid email address"),
+  name: z.string().trim().min(VALIDATION_SETTINGS.name.min, `Name must be at least ${VALIDATION_SETTINGS.name.min} characters`).max(VALIDATION_SETTINGS.name.max),
+  email: z.string().trim().toLowerCase().email("Invalid email address"),
   password: z.string().min(VALIDATION_SETTINGS.password.min, `Password must be at least ${VALIDATION_SETTINGS.password.min} characters`).max(VALIDATION_SETTINGS.password.max, `Password must be at most ${VALIDATION_SETTINGS.password.max} characters`),
   confirmPassword: z.string(),
 }).refine((data) => data.password === data.confirmPassword, {

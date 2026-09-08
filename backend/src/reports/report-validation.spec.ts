@@ -22,13 +22,12 @@ describe("Report input and reporting calendar", () => {
       });
     },
   );
-  it("requires a project on create and rejects malformed or cleared project references", async () => {
+  it("allows incomplete drafts while rejecting malformed project references", async () => {
     const week = { weekStart: "2026-08-31", weekEnd: "2026-09-06" };
     const projectId = "11111111-1111-4111-8111-111111111111";
-    // A project and at least one task are mandatory on create.
-    await expect(validate(week)).rejects.toMatchObject({ status: 400 });
-    await expect(validate({ ...week, projectId })).rejects.toMatchObject({
-      status: 400,
+    await expect(validate(week)).resolves.toMatchObject(week);
+    await expect(validate({ ...week, projectId })).resolves.toMatchObject({
+      projectId,
     });
     await expect(validate({ ...week, projectId: "" })).rejects.toMatchObject({
       status: 400,
@@ -36,9 +35,11 @@ describe("Report input and reporting calendar", () => {
     await expect(
       validate({ ...week, projectId: "invalid" }),
     ).rejects.toMatchObject({ status: 400 });
-    // Clearing the project on PATCH is rejected so reports always keep one.
-    await expect(validate({ projectId: null }, true)).rejects.toMatchObject({
+    await expect(validate({ projectId: null })).rejects.toMatchObject({
       status: 400,
+    });
+    await expect(validate({ projectId: null }, true)).resolves.toMatchObject({
+      projectId: null,
     });
     // A valid project reference is accepted on both create and update.
     await expect(
@@ -54,8 +55,8 @@ describe("Report input and reporting calendar", () => {
       weekStart: "2026-08-31",
       weekEnd: "2026-09-06",
     };
-    await expect(validate({ ...week, tasks: [] })).rejects.toMatchObject({
-      status: 400,
+    await expect(validate({ ...week, tasks: [] })).resolves.toMatchObject({
+      tasks: [],
     });
     await expect(
       validate({ ...week, tasks: [{ taskName: "   " }] }),

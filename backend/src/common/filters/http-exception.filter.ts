@@ -42,7 +42,7 @@ export class GlobalExceptionFilter implements ExceptionFilter {
     // Log unexpected (non-HTTP) failures with request context.
     if (!(exception instanceof HttpException)) {
       this.logger.error(
-        `[${request.method}] ${request.url} → ${status} ${code}: ${message}`,
+        `[${request.method}] ${request.path || request.url.split('?')[0]} → ${status} ${code}: ${message}`,
         exception instanceof Error ? exception.stack : undefined,
       );
     }
