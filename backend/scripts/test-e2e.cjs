@@ -9,7 +9,7 @@ async function main() {
   const url = new URL(DB_SETTINGS.url);
   if (!["localhost", "127.0.0.1", "[::1]"].includes(url.hostname))
     throw new Error("E2E tests require local PostgreSQL.");
-  const schema = `test_assignment_${randomUUID().replaceAll("-", "")}`;
+  const schema = `test_weekly_report_${randomUUID().replaceAll("-", "")}`;
   url.searchParams.set("schema", schema);
   const env = {
     ...process.env,
@@ -41,7 +41,7 @@ async function main() {
       { cwd: root, env, stdio: "inherit" },
     );
   } finally {
-    if (!/^test_assignment_[a-f0-9]{32}$/.test(schema))
+    if (!/^test_weekly_report_[a-f0-9]{32}$/.test(schema))
       throw new Error("Unexpected test schema; cleanup refused.");
     // Only this invocation's newly created isolated schema is removed.
     await client.query(`DROP SCHEMA IF EXISTS "${schema}" CASCADE`);

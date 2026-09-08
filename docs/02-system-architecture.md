@@ -22,4 +22,4 @@ The frontend (`frontend/`) uses TypeScript, App Router, React Hook Form, Zod, Ax
 
 ## Configuration and infrastructure
 
-Backend configuration is centralized in `backend/src/settings.ts`; frontend browser-safe values are in `frontend/src/lib/settings.ts`. Only `NEXT_PUBLIC_*` values reach browser code. Root `docker-compose.yml` starts PostgreSQL 16 for local development only. `backend/scripts/db-init.ts` generates Prisma Client, applies the committed migration, and seeds a local database.
+Backend configuration is centralized in `backend/src/settings.ts`; frontend browser-safe values are in `frontend/src/lib/settings.ts`. Only `NEXT_PUBLIC_*` values reach browser code. `backend/scripts/db-init.ts` generates Prisma Client, applies the committed migration, and seeds a local PostgreSQL database.

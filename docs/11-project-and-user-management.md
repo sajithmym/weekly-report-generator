@@ -4,7 +4,7 @@
 
 Authenticated users can read active projects for report selection. Managers/admins create, update, archive, and reactivate projects. `DELETE /api/v1/projects/:id` soft-archives a project; it does not destroy historical report relationships. A patch can reactivate an archived project.
 
-`user_projects` is present for future assignment rules but is not currently used to restrict report project selection or visibility. Do not describe project assignment enforcement as implemented.
+`user_projects` is present for future membership rules but is not currently used to restrict report project selection or visibility. Do not describe project-membership enforcement as implemented.
 
 ## Users
 

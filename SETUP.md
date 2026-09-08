@@ -6,20 +6,13 @@ Use this guide for local setup. The numbered and feature-level guides in `docs/`
 
 - Node.js 24 or later (`node --version`)
 - npm
-- Docker Desktop with Docker Compose, or PostgreSQL 14+
+- A locally installed or otherwise reachable PostgreSQL 14+ server
 
 The API package requires Node `>=24.0.0`; using Node 24 for both applications avoids version drift.
 
-## 1. Start PostgreSQL
+## 1. Prepare PostgreSQL
 
-From the repository root:
-
-```bash
-docker compose up -d
-docker compose ps
-```
-
-The supplied service is PostgreSQL 16 at `localhost:5432` with database `weekly_report_db` and the development `postgres` credentials. To use an existing PostgreSQL server instead, change `backend/.env` after copying the example file.
+Create or use a local PostgreSQL 14+ database and configure `backend/.env` with its host, port, user, password, and database name. The example file defaults to a local `weekly_report_db` database on port `5432`; adjust those values to match your installation.
 
 ## 2. Configure and start the backend
 
@@ -59,7 +52,7 @@ Open `http://localhost:3000`.
 
 ### `backend/.env`
 
-The `.env.example` file documents all supported keys. For local Docker defaults, retain:
+The `.env.example` file documents all supported keys. For a typical local PostgreSQL installation, retain or adapt:
 
 ```env
 PORT=5000
@@ -140,7 +133,7 @@ npm run test:coverage
 npm run build
 ```
 
-The E2E command requires local PostgreSQL. It creates and cleans an isolated `test_assignment_*` schema; it does not reset the development schema.
+The E2E command requires local PostgreSQL. It creates and cleans an isolated `test_weekly_report_*` schema; it does not reset the development schema.
 
 ## Production release sequence
 
@@ -150,4 +143,4 @@ The E2E command requires local PostgreSQL. It creates and cleans an isolated `te
 4. Build and deploy the frontend with its public API base URL.
 5. Verify health, login, RBAC, and a complete draft-submit-review-correction-resubmit cycle in a real browser.
 
-For the full security model, route list, role matrix, and manual submission deliverables, read [docs/PROJECT_REFERENCE.md](docs/PROJECT_REFERENCE.md).
+For the full security model, route list, role matrix, and deployment guidance, read [docs/PROJECT_REFERENCE.md](docs/PROJECT_REFERENCE.md).

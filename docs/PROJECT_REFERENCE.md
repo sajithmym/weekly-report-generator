@@ -4,11 +4,11 @@ This is the cross-cutting source of truth for the Weekly Report Generator as imp
 
 ## Scope and architecture
 
-The application is an internal weekly-report system with a Next.js 16 frontend, a NestJS 11 API, Prisma 5, and PostgreSQL 16 (the supplied Docker image). The frontend is a client-rendered Next.js App Router application. The API is served beneath `/api/v1`; Prisma owns the relational data model and committed migration history.
+The application is an internal weekly-report system with a Next.js 16 frontend, a NestJS 11 API, Prisma 5, and PostgreSQL 14+. The frontend is a client-rendered Next.js App Router application. The API is served beneath `/api/v1`; Prisma owns the relational data model and committed migration history.
 
 - Frontend: `frontend/`, TypeScript, React Hook Form, Zod, Tailwind, Radix UI, Recharts, Axios, Vitest and Testing Library.
 - Backend: `backend/`, NestJS modules, DTO validation, Prisma, PostgreSQL, JWT, Jest, and Supertest.
-- Local database: root `docker-compose.yml` starts PostgreSQL only. It does not build or deploy the applications.
+- Local database: provide a locally installed or otherwise reachable PostgreSQL server and configure it through `backend/.env`.
 - Required runtime for the whole repository: Node.js 24 or later. The backend enforces `>=24.0.0`; the frontend itself supports `>=20.9.0`.
 
 ## Roles and permissions
@@ -60,7 +60,7 @@ The `DELETE /projects/:id` endpoint is a soft delete: it marks the project inact
 
 The Prisma schema is `backend/prisma/schema.prisma`. The committed baseline migration is `20260905000000_initial`; `backend/prisma/migrations/migration_lock.toml` declares PostgreSQL. Apply the schema with `npx prisma migrate deploy`; do not use `migrate dev` in production.
 
-Tables: `users`, `projects`, `user_projects`, `reports`, `report_tasks`, `next_week_tasks`, `blockers`, `achievements`, `work_hours`, `report_versions`, `reviews`, and `refresh_tokens`. `user_projects` is present in the schema for future assignment support; current report selection is limited to active projects but does not use project assignment rules.
+Tables: `users`, `projects`, `user_projects`, `reports`, `report_tasks`, `next_week_tasks`, `blockers`, `achievements`, `work_hours`, `report_versions`, `reviews`, and `refresh_tokens`. `user_projects` is present in the schema for future project-membership support; current report selection is limited to active projects but does not use membership rules.
 
 `npm run db:init` is a development-only bootstrap command. It creates the configured local database through the PostgreSQL driver, generates Prisma Client, applies committed migrations, and seeds data. `npm run db:reset` destroys and recreates the configured database; do not use it for shared or production data.
 
@@ -98,11 +98,11 @@ Latest verified automated counts:
 
 | Suite | Command | Result |
 |---|---|---|
-| Backend unit | `cd backend; npm test -- --runInBand` | 75 tests, 14 suites |
-| Backend HTTP/PostgreSQL E2E | `cd backend; npm run test:e2e` | 14 tests in an isolated temporary PostgreSQL schema |
-| Frontend unit/component | `cd frontend; npm test` | 64 tests, 14 files |
+| Backend unit | `cd backend; npm test -- --runInBand` | 85 tests, 16 suites |
+| Backend HTTP/PostgreSQL E2E | `cd backend; npm run test:e2e` | 24 tests in an isolated temporary PostgreSQL schema |
+| Frontend unit/component | `cd frontend; npm test` | 100 tests, 17 files |
 
-The E2E runner requires a locally accessible PostgreSQL server. It creates a random `test_assignment_*` schema, applies the committed migration, runs HTTP workflow/RBAC/security/seed checks, and removes only that schema afterward.
+The E2E runner requires a locally accessible PostgreSQL server. It creates a random `test_weekly_report_*` schema, applies the committed migration, runs HTTP workflow/RBAC/security/seed checks, and removes only that schema afterward.
 
 Also run:
 
@@ -122,7 +122,7 @@ npm run test:coverage
 
 ## Deployment
 
-No hosting configuration, deployment pipeline, public URLs, Dockerfile, presentation, ER diagram asset, or demonstration video is included in this repository. Deploy the frontend and backend as separate services with a managed PostgreSQL database, then:
+No hosting configuration, deployment pipeline, or public URLs are included in this repository. Deploy the frontend and backend as separate services with a managed PostgreSQL database, then:
 
 1. Set the production backend variables and 32+ character distinct JWT secrets.
 2. Set `FRONTEND_URL` to the deployed frontend origin and `NEXT_PUBLIC_API_BASE_URL` to the deployed API prefix.
@@ -131,6 +131,6 @@ No hosting configuration, deployment pipeline, public URLs, Dockerfile, presenta
 5. Use HTTPS. For separate frontend/API sites, configure `AUTH_COOKIE_SAME_SITE=none`; the secure cookie setting is automatic in production.
 6. Smoke-test health, login, a full correction/resubmission workflow, RBAC, and browser behavior at desktop and mobile widths.
 
-## Remaining manual submission work
+## Production readiness
 
-The codebase cannot provide or verify external submission artifacts. Before submitting, create and verify the required presentation, ER diagram image, face-visible demo video, repository URL, deployed URLs if requested, and shared-drive permissions. Perform browser QA for keyboard navigation, mobile layouts, charts, dialogs, cookies, and the complete member-to-manager workflow.
+Before release, verify deployment access, production secrets, backups, monitoring, and browser QA for keyboard navigation, mobile layouts, charts, dialogs, cookies, and the complete member-to-manager workflow.

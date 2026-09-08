@@ -2,7 +2,7 @@
 
 ## Local database
 
-Run `docker compose up -d` in the repository root to start supplied PostgreSQL 16. Copy `backend/.env.example` to `.env`, then run:
+Create or select a local PostgreSQL 14+ database, configure its connection values in `backend/.env`, then run:
 
 ```powershell
 cd backend

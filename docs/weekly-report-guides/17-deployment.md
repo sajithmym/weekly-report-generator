@@ -6,7 +6,7 @@ This implementation guide describes the current feature, its code boundary, and 
 
 ## Current implementation
 
-The project documents a release sequence but supplies no hosting pipeline/Dockerfiles. Production deploys API/frontend separately, runs `prisma migrate deploy`, uses secret storage/HTTPS, then performs operational smoke tests.
+The project documents a release sequence but supplies no hosting pipeline. Production deploys API/frontend separately, runs `prisma migrate deploy`, uses secret storage/HTTPS, then performs operational smoke tests.
 
 ## Verify
 

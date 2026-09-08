@@ -6,7 +6,7 @@ This implementation guide describes the current feature, the code boundary that 
 
 ## Current implementation
 
-The product supports weekly reporting, manager review/analytics, project maintenance, and administrator access control. It intentionally does not implement project assignment enforcement, deployment infrastructure, payroll, or public reporting.
+The product supports weekly reporting, manager review/analytics, project maintenance, and administrator access control. It intentionally does not implement project-membership enforcement, deployment infrastructure, payroll, or public reporting.
 
 ## Verify
 

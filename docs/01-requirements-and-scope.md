@@ -22,4 +22,4 @@ Weekly Report Generator is an internal system where team members record weekly w
 
 ## Scope boundary
 
-The `user_projects` table exists for future project assignment support, but the current API/UI does not restrict a member to assigned projects. Project deletion is a soft archive so historical reports retain their relationships. Browser redirects support usability only; the NestJS API is the authorization boundary.
+The `user_projects` table exists for future project-membership support, but the current API/UI does not restrict a member to linked projects. Project deletion is a soft archive so historical reports retain their relationships. Browser redirects support usability only; the NestJS API is the authorization boundary.

@@ -11,4 +11,4 @@ This record contains only changes verified against the current repository.
 - Added frontend Vitest/Testing Library coverage and removed production `any` request payload and error handling paths.
 - Fixed weekly-form controlled select defaults and exposed shared load errors through an accessible alert role.
 
-Current commands and verified test counts are in [PROJECT_REFERENCE.md](PROJECT_REFERENCE.md). The remaining work is external deployment and submission artifacts, plus browser/device QA.
+Current commands and verified test counts are in [PROJECT_REFERENCE.md](PROJECT_REFERENCE.md). The remaining work is production deployment preparation and browser/device QA.

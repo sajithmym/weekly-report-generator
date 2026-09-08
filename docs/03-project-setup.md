@@ -2,14 +2,11 @@
 
 ## Prerequisites
 
-Use Node.js 24+, npm, and Docker Desktop with Compose or a reachable PostgreSQL 14+ server. The backend enforces Node `>=24.0.0`; use Node 24 for both apps.
+Use Node.js 24+, npm, and a reachable PostgreSQL 14+ server. The backend enforces Node `>=24.0.0`; use Node 24 for both apps.
 
 ## Local startup
 
 ```powershell
-# repository root
-docker compose up -d
-
 cd backend
 Copy-Item .env.example .env
 npm ci

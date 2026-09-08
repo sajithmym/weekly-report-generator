@@ -9,7 +9,7 @@
 | Frontend unit/component | `cd frontend; npm test` | 64 tests, 14 files |
 | Frontend coverage | `cd frontend; npm run test:coverage` | Passing; 38.72% overall statement coverage |
 
-Backend unit coverage includes auth/token behavior, guards, response/error handling, reports/workflow validation, projects, users, dashboard calculations, and health behavior. The E2E runner creates a random `test_assignment_*` PostgreSQL schema, applies the committed migration, tests RBAC/security/workflow/seed behavior, then removes only that schema.
+Backend unit coverage includes auth/token behavior, guards, response/error handling, reports/workflow validation, projects, users, dashboard calculations, and health behavior. The E2E runner creates a random `test_weekly_report_*` PostgreSQL schema, applies the committed migration, tests RBAC/security/workflow/seed behavior, then removes only that schema.
 
 Frontend tests cover auth forms/redirects, schemas, report form dynamics, roster/report presentation, API services, Axios behavior, resource state, date utilities, entity selection, pagination, badges, and safe errors.
 

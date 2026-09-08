@@ -2,7 +2,7 @@
 
 ## Current repository boundary
 
-The repository provides only local PostgreSQL Compose infrastructure. It has no frontend/API Dockerfile, CI/CD pipeline, hosting configuration, public URL, secret store, or monitoring provider. Supply those with the chosen deployment platform.
+The repository has no CI/CD pipeline, hosting configuration, public URL, secret store, or monitoring provider. Supply those with the chosen deployment platform.
 
 ## Release sequence
 

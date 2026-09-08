@@ -1,4 +1,4 @@
-# Final submission readiness
+# Release readiness
 
 ## Implemented behavior
 
@@ -6,11 +6,11 @@ Code/docs describe current implementation: Node 24 runtime, one committed migrat
 
 ## Rules and boundaries
 
-Deployment pipeline/public URLs/ER diagram image/presentation/demo video/share permissions are external manual deliverables. Do not state these are complete until artifacts and access are verified.
+Deployment pipeline, public URLs, production secret storage, backups, monitoring, and access controls are external operational concerns. Do not state a release is ready until they are verified.
 
 ## Verification
 
-Run all quality commands, complete browser QA, create external artifacts, set production secrets/HTTPS, deploy/migrate safely, and verify reviewer access.
+Run all quality commands, complete browser QA, set production secrets/HTTPS, deploy and migrate safely, and verify user access.
 
 ## Related guides
 

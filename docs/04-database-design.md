@@ -9,7 +9,7 @@
 | Group | Tables | Purpose |
 |---|---|---|
 | Identity | `users`, `refresh_tokens` | Accounts and secure browser sessions. |
-| Projects | `projects`, `user_projects` | Active/archived projects and future assignment relation. |
+| Projects | `projects`, `user_projects` | Active/archived projects and future membership relation. |
 | Current report | `reports`, `report_tasks`, `next_week_tasks`, `blockers`, `achievements`, `work_hours` | Current editable report data. |
 | Workflow audit | `report_versions`, `reviews` | Submission snapshots and decisions/comments. |
 
@@ -22,7 +22,7 @@ User 1--* Report 1--* Tasks / NextWeekTasks / Blockers / Achievements / WorkHour
 User 1--* RefreshToken
 Project 1--* Report
 Report 1--* ReportVersion 1--* Review
-User *--* Project through UserProject (reserved for future assignment policy)
+User *--* Project through UserProject (reserved for a future membership policy)
 ```
 
 See [21 Database setup](21-database-setup-guide.md) for safe local and production commands.

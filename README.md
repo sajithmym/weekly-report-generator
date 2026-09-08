@@ -4,11 +4,9 @@ A full-stack internal reporting application. Team members create weekly reports,
 
 ## Quick start
 
-Prerequisites: Node.js 24+, npm, and PostgreSQL 16 or compatible PostgreSQL 14+. The included Docker Compose file starts PostgreSQL 16.
+Prerequisites: Node.js 24+, npm, and a locally installed or otherwise reachable PostgreSQL 14+ database.
 
 ```powershell
-docker compose up -d
-
 cd backend
 Copy-Item .env.example .env
 npm ci
@@ -72,17 +70,17 @@ npm test
 npm run build
 ```
 
-The latest verified suites contain 78 backend unit tests, 23 backend HTTP/PostgreSQL E2E tests, and 89 frontend unit/component tests. See the [report creation verification](docs/report-creation-verification.md) for fixes, coverage, the localhost smoke test, and remaining browser QA.
+The latest verified suites contain 85 backend unit tests, 24 backend HTTP/PostgreSQL E2E tests, and 100 frontend unit/component tests. See the [report creation verification](docs/report-creation-verification.md) for fixes, coverage, and browser QA guidance.
 
 ## Documentation
 
 - [Setup guide](SETUP.md)
 - [Current project reference](docs/PROJECT_REFERENCE.md)
-- [Audit reconciliation](docs/assignment-audit.md)
-- [Confirmed fixes](docs/assignment-fixes.md)
+- [Project audit](docs/project-audit.md)
+- [Confirmed fixes](docs/project-fixes.md)
 
 The numbered guides and feature subfolders provide detailed, current implementation documentation. Start with the documentation index for feature-by-feature navigation.
 
-## Deployment and submission artifacts
+## Deployment readiness
 
-This repository does not contain a deployment pipeline, public deployment, Dockerfile, presentation, ER diagram image, or demo video. The required production variables, migration command, release process, and remaining manual submission work are documented in [the project reference](docs/PROJECT_REFERENCE.md#deployment).
+This repository does not include a deployment pipeline or public deployment. The required production variables, migration command, release process, and operational checks are documented in [the project reference](docs/PROJECT_REFERENCE.md#deployment).

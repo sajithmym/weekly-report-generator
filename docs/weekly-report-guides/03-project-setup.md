@@ -6,7 +6,7 @@ This implementation guide describes the current feature, the code boundary that 
 
 ## Current implementation
 
-Local startup uses Docker Compose for PostgreSQL, `backend/.env`, `npm run db:init`, NestJS development server, and `frontend/.env.local` with Next.js development server.
+Local startup uses a configured PostgreSQL server, `backend/.env`, `npm run db:init`, NestJS development server, and `frontend/.env.local` with Next.js development server.
 
 ## Verify
 
